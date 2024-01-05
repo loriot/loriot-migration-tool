@@ -1,5 +1,8 @@
 # Kerlink Migration Tool
 
+## Build
+`docker-compose build`
+
 ## Usage
-1. Build docker image: `docker-compose build`
-2. Run docker container: `docker-compose up`
+1. Place exported csv file to `./data/devices.csv`
+2. `docker-compose up`

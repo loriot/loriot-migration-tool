@@ -6,3 +6,5 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    volumes:
+      - ./data/devices.csv:/data/devices.csv

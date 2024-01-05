@@ -1,0 +1,5 @@
+extraction_date,customerId,customerName,clusterId,clusterName,devEui,name,classType,rfRegion,country,macVersion,regParamsRevision,profile,adrEnabled,activation,appEui,appKey,fcntDown,fcntUp,devNonceCounter,fNwkSIntKey,sNwkSIntKey,rx1Delay,rx1DrOffset,rx2Dr,rx2Freq,rxWindows,cfList,dwellTime,pingSlotDr,pingSlotFreq,geolocation,latitude,longitude,altitude,status,lastDataUpDr,dev_addr,NwkSKey,AppSKey,devices_profiles
+2023-12-20 15:16:38.467538,15,CustomerTest_Dev,1152,Cluster A,BE7A000000000001,Device A1,A,EU868,,1.0.2,B,,,,70B3XXXXXXXXXXXX,,,,,,,,,,,,,,,,,,,,,,,,,1.0.2_B_A_EU868
+2023-12-20 15:16:39.467538,15,CustomerTest_Dev,1152,Cluster A,BE7A000000000002,Device A2,A,EU868,,1.0.2,B,,,,70B3XXXXXXXXXXXX,,,,,,,,,,,,,,,,,,,,,,,,,1.0.2_B_A_EU868
+2023-12-20 15:16:38.467538,15,CustomerTest_Dev,1153,Cluster B,BE7A000000000003,Device B1,A,EU868,,1.0.2,B,,,,70B3XXXXXXXXXXXX,,,,,,,,,,,,,,,,,,,,,,,,,1.0.2_B_A_EU868
+2023-12-20 15:16:39.467538,15,CustomerTest_Dev,1153,Cluster B,BE7A000000000004,Device B2,A,EU868,,1.0.2,B,,,,70B3XXXXXXXXXXXX,,,,,,,,,,,,,,,,,,,,,,,,,1.0.2_B_A_EU868
