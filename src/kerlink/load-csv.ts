@@ -1,33 +1,39 @@
 import csv from 'csvtojson';
 
 export type KerlinkDevice = {
-  extraction_date: Date;
-  customerId: string;
-  customerName: string;
+  // Used fields
   clusterId: number;
   clusterName: string;
   devEui: string;
   name: string;
   classType: string;
-  rfRegions: string;
-  country: string;
   macVersion: string;
-  regParamsRevision: string;
-  profile: string;
   adrEnabled: boolean;
-  activation: 'OTAA' | 'ABP';
+  activation: string;
   appEui: string;
   appKey: string;
   fcntDown: number;
   fcntUp: number;
+  rx1Delay: number;
+  rxWindows: number;
+  dev_addr: string;
+  NwkSKey: string;
+  AppSKey: string;
+
+  // TODO: to be used
+  extraction_date: Date;
+  customerId: string;
+  customerName: string;
+  rfRegions: string;
+  country: string;
+  regParamsRevision: string;
+  profile: string;
   devNonceCounter: string;
   fNwkSIntKey: string;
   sNwkSIntKey: string;
-  rx1Delay: number;
   rx1DrOffset: number;
   rx2Dr: number;
   rx2Freq: number;
-  rxWindows: number;
   cfList: string;
   dwellTime: number;
   pingSlotDr: number;
@@ -38,9 +44,6 @@ export type KerlinkDevice = {
   altitude: number;
   status: string;
   lastDataUpDr: number;
-  dev_addr: string;
-  NwkSKey: string;
-  AppSKey: string;
   devices_profiles: string;
 };
 
