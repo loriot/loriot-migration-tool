@@ -8,3 +8,6 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./data/devices.csv:/data/devices.csv
+    environment:
+      - URL=${URL}
+      - AUTH=${AUTH}

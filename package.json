@@ -6,7 +6,9 @@
   "scripts": {
     "build": "tsc",
     "prestart": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "predebug": "tsc",
+    "debug": "node --inspect-brk=65225 dist/index.js"
   },
   "repository": {
     "type": "git",
@@ -23,6 +25,8 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
+    "@types/axios": "^0.14.0",
+    "axios": "^1.6.5",
     "csvtojson": "^2.0.10"
   }
 }

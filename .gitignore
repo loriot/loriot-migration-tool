@@ -73,7 +73,6 @@ web_modules/
 .yarn-integrity
 
 # dotenv environment variable files
-.env
 .env.development.local
 .env.test.local
 .env.production.local
@@ -130,3 +129,5 @@ dist
 .pnp.*
 
 package-lock.json
+.vscode/settings.json
+docker-compose.local.yaml
