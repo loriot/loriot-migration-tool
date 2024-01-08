@@ -51,10 +51,18 @@ export async function loadKerlinkDevicesFromCsv(
 
   return csv()
     .fromFile(path)
-    .then((data) => {
+    .then((data: any[]) => {
       console.log(`Found ${data.length} devices!`);
 
-      // TODO: cast fields from csv strings
+      // TODO: cast and validate CSV fields
+      for (const device of data) {
+        device.adrEnabled = device.adrEnabled == 'true';
+        device.rxWindows = Number(device.rxWindows);
+        device.rx1Delay = Number(device.rx1Delay);
+        device.fcntUp = Number(device.fcntUp);
+        device.fcntDown = Number(device.fcntDown);
+      }
+
       return data;
     });
 }
