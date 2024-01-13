@@ -5,10 +5,11 @@ import { importDevicesToLoriot } from './loriot/import-devices';
   try {
     // Load devices from kerlink csv
     const clusters = await loadKerlinkClusters();
-    console.log(clusters);
 
-    // Import devices to LORIOT
-    // await importDevicesToLoriot(devices);
+    // Migrate devices
+    if (clusters.length > 0) {
+      await importDevicesToLoriot(clusters);
+    }
 
     process.exit(0);
   } catch (err) {

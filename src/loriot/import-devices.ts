@@ -1,10 +1,20 @@
-import { KerlinkDevice } from '../kerlink/load-clusters';
+import {
+  KerlinkCluster,
+  KerlinkDevice,
+  KerlinkPushConfiguration,
+} from '../kerlink/load-clusters';
 import axios, { AxiosError, AxiosResponse } from 'axios';
 import { getErrorMessage } from '../utils';
 
 type LoriotApplication = {
   name: string;
+  outputs: LoriotOutput[];
   devices: LoriotDevice[];
+};
+
+type LoriotOutput = {
+  name: string;
+  url: string;
 };
 
 type LoriotDevice = {
@@ -44,55 +54,58 @@ enum eDeviceActivation {
   OTAA = 'OTAA',
 }
 
-export async function importDevicesToLoriot(kerlinkDevices: KerlinkDevice[]) {
+export async function importDevicesToLoriot(kerlinkClusters: KerlinkCluster[]) {
   console.debug(`Importing devices to LORIOT ...`);
   console.debug(`| URL: ${process.env.URL}`);
   console.debug(`| AUTH: ${process.env.AUTH}`);
 
-  const apps: Map<number, LoriotApplication> = new Map(); // key: clusterId
-  for (const kerlinkDevice of kerlinkDevices) {
-    // Prepare LORIOT application
-    var app = apps.get(kerlinkDevice.clusterId);
-    if (!app) {
-      // First time for this cluster, so create LORIOT application
-      app = {
-        name: kerlinkDevice.clusterName,
-        devices: [],
-      };
-      apps.set(kerlinkDevice.clusterId, app);
-    }
-
-    try {
-      // Prepare LORIOT device
-      const dev: LoriotDevice = translateFromKerlinkDevice(kerlinkDevice);
-      // Add device to application list
-      app.devices.push(dev);
-    } catch (err: any) {
-      // Unable to parse kerlink device
-      console.error(
-        `[${app.name}][${
-          kerlinkDevice.devEui
-        }] Device parsing error: ${getErrorMessage(err)}`
-      );
-    }
+  /**
+   * Translate from Kerlink to LORIOT
+   */
+  const apps: LoriotApplication[] = [];
+  for (const kerlinkCluster of kerlinkClusters) {
+    // Prepare LORIOT device
+    const app: LoriotApplication = translateKerlinkCluster(kerlinkCluster);
+    // Add device to application list
+    apps.push(app);
   }
 
-  // Create LORIOT applications
-  for (const app of Array.from(apps.values())) {
+  /**
+   * Call LORIOT API to create recourses
+   */
+  for (const app of apps) {
     try {
+      // Create application
       console.debug(`[${app.name}] Creating application ...`);
       const appId = await createApp(app);
       console.debug(`[${app.name}] Application created!`);
 
-      // Create LORIOT devices
-      for (const dev of app.devices) {
+      // Create outputs
+      for (const out of app.outputs) {
         try {
-          console.debug(`[${app.name}][${dev.deveui}] Creating device ...`);
-          await createDevice(appId, dev);
-          console.debug(`[${app.name}][${dev.deveui}] Device created!`);
+          console.debug(`[${app.name}][OUT][${out.name}] Creating output ...`);
+          await createOutput(appId, out);
+          console.debug(`[${app.name}][OUT][${out.name}] Output created!`);
         } catch (err: any) {
           console.error(
-            `[${app.name}][${
+            `[${app.name}][OUT][${
+              out.name
+            }] Output creation error: ${getErrorMessage(err)}`
+          );
+        }
+      }
+
+      // Create devices
+      for (const dev of app.devices) {
+        try {
+          console.debug(
+            `[${app.name}][DEV][${dev.deveui}] Creating device ...`
+          );
+          await createDevice(appId, dev);
+          console.debug(`[${app.name}][DEV][${dev.deveui}] Device created!`);
+        } catch (err: any) {
+          console.error(
+            `[${app.name}][DEV][${
               dev.deveui
             }] Device creation error: ${getErrorMessage(err)}`
           );
@@ -105,31 +118,47 @@ export async function importDevicesToLoriot(kerlinkDevices: KerlinkDevice[]) {
     }
   }
 
-  console.debug(`Importing devices to LORIOT completed!`);
+  console.debug(`Device migration completed!`);
 }
 
-async function createApp(app: LoriotApplication): Promise<string> {
-  return axios
-    .post(
-      `https://${process.env.URL}/1/nwk/apps`,
-      {
-        title: app.name,
-        capacity: app.devices.length,
-        visibility: 'private',
-        mcastdevlimit: 0,
-      },
-      {
-        headers: { Authorization: process.env.AUTH },
-      }
-    )
-    .then((res: AxiosResponse) => {
-      return res.data._id.toString(16).toUpperCase();
-    });
+function translateKerlinkCluster(
+  kerlinkCluster: KerlinkCluster
+): LoriotApplication {
+  const app: LoriotApplication = {
+    name: kerlinkCluster.name,
+    outputs: [],
+    devices: [],
+  };
+
+  // Translate outputs
+  for (const kerlinkPushConfiguration of kerlinkCluster.pushConfigurations) {
+    const out: LoriotOutput = translateKerlinkPushConfigurations(
+      kerlinkPushConfiguration
+    );
+    app.outputs.push(out);
+  }
+
+  // Translate devices
+  for (const kerlinkDevice of kerlinkCluster.devices) {
+    const dev: LoriotDevice = translateKerlinkDevice(kerlinkDevice);
+    app.devices.push(dev);
+  }
+
+  return app;
 }
 
-function translateFromKerlinkDevice(
-  kerlinkDevice: KerlinkDevice
-): LoriotDevice {
+function translateKerlinkPushConfigurations(
+  kerlinkPushConfiguration: KerlinkPushConfiguration
+): LoriotOutput {
+  // only minimal HTTP supported
+  // TODO: support headers, certs and MQTT
+  return {
+    name: kerlinkPushConfiguration.name,
+    url: kerlinkPushConfiguration.url,
+  };
+}
+
+function translateKerlinkDevice(kerlinkDevice: KerlinkDevice): LoriotDevice {
   const splittedMacVersion = kerlinkDevice.macVersion.split('.');
   const lorawan: lorawanVersion = {
     major: Number(splittedMacVersion[0]),
@@ -158,6 +187,41 @@ function translateFromKerlinkDevice(
   };
 
   return dev;
+}
+
+async function createApp(app: LoriotApplication): Promise<string> {
+  return axios
+    .post(
+      `https://${process.env.URL}/1/nwk/apps`,
+      {
+        title: app.name,
+        capacity: app.devices.length,
+        visibility: 'private',
+        mcastdevlimit: 0,
+      },
+      {
+        headers: { Authorization: process.env.AUTH },
+      }
+    )
+    .then((res: AxiosResponse) => {
+      return res.data._id.toString(16).toUpperCase();
+    });
+}
+
+async function createOutput(appId: string, out: LoriotOutput): Promise<string> {
+  return axios.post(
+    `https://${process.env.URL}/1/nwk/app/${appId}/outputs`,
+    {
+      output: 'httppush',
+      osetup: {
+        name: out.name,
+        url: out.url,
+      },
+    },
+    {
+      headers: { Authorization: process.env.AUTH },
+    }
+  );
 }
 
 async function createDevice(appId: string, dev: LoriotDevice): Promise<string> {

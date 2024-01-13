@@ -7,7 +7,9 @@ services:
       context: .
       dockerfile: Dockerfile
     volumes:
+      - ./data/clusters.csv:/data/clusters.csv
       - ./data/devices.csv:/data/devices.csv
+      - ./data/pushConfigurations.csv:/data/pushConfigurations.csv
     environment:
       - URL=${URL}
       - AUTH=${AUTH}
