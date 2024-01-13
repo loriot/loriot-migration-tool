@@ -1,0 +1,3 @@
+id,customer,name,pushEnabled,pushConfiguration,geolocEnabled,geolocExpirationDate,hexa
+1152,"{ ""name"": ""Loriot"", ""id"": 540 }",Cluster A,true,"{ ""name"": ""LORIOT"", ""links"": [ { ""rel"": ""pushConfigurationHealth"", ""href"": ""/application/pushConfigurations/1753/health"" }, { ""rel"": ""self"", ""href"": ""/application/pushConfigurations/1753"" } ], ""id"": 1753 }",false,null,true
+1153,"{ ""name"": ""Loriot"", ""id"": 540 }",Cluster B,true,"{ ""name"": ""LORIOT"", ""links"": [ { ""rel"": ""pushConfigurationHealth"", ""href"": ""/application/pushConfigurations/1754/health"" }, { ""rel"": ""self"", ""href"": ""/application/pushConfigurations/1754"" } ], ""id"": 1754 }",false,null,true

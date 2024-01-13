@@ -1,4 +1,4 @@
-import { KerlinkDevice } from '../kerlink/load-csv';
+import { KerlinkDevice } from '../kerlink/load-clusters';
 import axios, { AxiosError, AxiosResponse } from 'axios';
 import { getErrorMessage } from '../utils';
 

@@ -1,13 +1,14 @@
-import { loadKerlinkDevicesFromCsv } from './kerlink/load-csv';
+import { loadKerlinkClusters } from './kerlink/load-clusters';
 import { importDevicesToLoriot } from './loriot/import-devices';
 
 (async () => {
   try {
     // Load devices from kerlink csv
-    const devices = await loadKerlinkDevicesFromCsv('./data/devices.csv');
+    const clusters = await loadKerlinkClusters();
+    console.log(clusters);
 
     // Import devices to LORIOT
-    await importDevicesToLoriot(devices);
+    // await importDevicesToLoriot(devices);
 
     process.exit(0);
   } catch (err) {

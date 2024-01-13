@@ -1,0 +1,4 @@
+id,name,customer,type,msgDetailLevel,url,user,password,httpDataUpRoute,httpDataDownEventRoute,headers,tlsCertFileName,tlsKeyFileName,tlsCaFileName,mqttHost,mqttPort,mqttTlsEnabled,mqttClientId,mqttConnectTimeout,mqttKeepAlive,mqttCleanSession,mqttQoS,mqttUser,mqttPassword,mqttDataUpTopic,mqttDataDownEventTopic,mqttWillTopic,mqttWillPayload,mqttWillQoS
+1753,HTTP A,"{ ""name"": ""Loriot"", ""id"": 540 }",HTTP,PAYLOAD,https://ens3oxa0yi3x.x.pipedream.net/A,ede,null,/uplink,/downlink,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null
+1754,HTTP B,"{ ""name"": ""Loriot"", ""id"": 540 }",HTTP,PAYLOAD,https://ens3oxa0yi3x.x.pipedream.net/B,ede,null,/uplink,/downlink,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null
+
