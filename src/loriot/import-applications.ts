@@ -3,7 +3,7 @@ import {
   KerlinkDevice,
   KerlinkPushConfiguration,
 } from '../kerlink/load-clusters';
-import axios, { AxiosError, AxiosResponse } from 'axios';
+import axios, { AxiosResponse } from 'axios';
 import { getErrorMessage } from '../utils';
 
 type LoriotApplication = {
@@ -54,10 +54,8 @@ enum eDeviceActivation {
   OTAA = 'OTAA',
 }
 
-export async function importDevicesToLoriot(kerlinkClusters: KerlinkCluster[]) {
-  console.debug(`Importing devices to LORIOT ...`);
-  console.debug(`| URL: ${process.env.URL}`);
-  console.debug(`| AUTH: ${process.env.AUTH}`);
+export async function migrateClusters(kerlinkClusters: KerlinkCluster[]) {
+  console.debug(`Migrating clusters to LORIOT ...`);
 
   /**
    * Translate from Kerlink to LORIOT
@@ -118,7 +116,8 @@ export async function importDevicesToLoriot(kerlinkClusters: KerlinkCluster[]) {
     }
   }
 
-  console.debug(`Device migration completed!`);
+  console.debug(`Clusters migration complete!`);
+  console.debug(`*************************************`);
 }
 
 function translateKerlinkCluster(

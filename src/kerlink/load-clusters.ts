@@ -1,4 +1,5 @@
 import csv from 'csvtojson';
+import fs from 'fs';
 
 const DEVICES_PATH = './data/devices.csv';
 const CLUSTERS_PATH = './data/clusters.csv';
@@ -90,84 +91,112 @@ export type KerlinkDevice = {
 };
 
 export async function loadKerlinkClusters(): Promise<KerlinkCluster[]> {
+  console.debug(`Loading clusters from CSV ...`);
+
   /**
    * Devices
    */
-  console.log(`Loading kerlink devices from ${DEVICES_PATH} ...`);
-  const devices: KerlinkDevice[] = await csv()
-    .fromFile(DEVICES_PATH)
-    .then((data: KerlinkDevice[]) => {
-      console.log(`Found ${data.length} devices!`);
+  var devices: KerlinkDevice[] = [];
+  if (!fs.existsSync(DEVICES_PATH)) {
+    console.log(
+      `File ${DEVICES_PATH} not found: devices will not be imported!`
+    );
+  } else {
+    console.log(`Loading kerlink devices from ${DEVICES_PATH} ...`);
+    devices = await csv()
+      .fromFile(DEVICES_PATH)
+      .then((data: KerlinkDevice[]) => {
+        console.log(`Found ${data.length} devices!`);
 
-      // Cast and validate CSV fields
-      for (const device of data) {
-        device.adrEnabled = (device as any).adrEnabled == 'true';
-        device.rxWindows = Number(device.rxWindows);
-        device.rx1Delay = Number(device.rx1Delay);
-        device.fcntUp = Number(device.fcntUp);
-        device.fcntDown = Number(device.fcntDown);
-        // TODO: cast other fields
-        // TODO: validate datatypes
-      }
+        // Cast and validate CSV fields
+        for (const device of data) {
+          device.adrEnabled = (device as any).adrEnabled == 'true';
+          device.rxWindows = Number(device.rxWindows);
+          device.rx1Delay = Number(device.rx1Delay);
+          device.fcntUp = Number(device.fcntUp);
+          device.fcntDown = Number(device.fcntDown);
+          // TODO: cast other fields
+          // TODO: validate datatypes
+        }
 
-      return data;
-    });
+        return data;
+      });
+  }
 
   /**
    * Push Configurations
    */
-  console.log(
-    `Loading kerlink push configurations from ${PUSHCONFIGURATIONS_PATH} ...`
-  );
-  const pushConfigurations: KerlinkPushConfiguration[] = await csv()
-    .fromFile(PUSHCONFIGURATIONS_PATH)
-    .then((data: KerlinkPushConfiguration[]) => {
-      console.log(`Found ${data.length} push configurations!`);
+  var pushConfigurations: KerlinkPushConfiguration[] = [];
+  if (!fs.existsSync(PUSHCONFIGURATIONS_PATH)) {
+    console.log(
+      `File ${PUSHCONFIGURATIONS_PATH} not found: push configurations will not be imported!`
+    );
+  } else {
+    console.log(
+      `Loading kerlink push configurations from ${PUSHCONFIGURATIONS_PATH} ...`
+    );
+    pushConfigurations = await csv()
+      .fromFile(PUSHCONFIGURATIONS_PATH)
+      .then((data: KerlinkPushConfiguration[]) => {
+        console.log(`Found ${data.length} push configurations!`);
 
-      // Cast and validate CSV fields
-      for (const pushConfiguration of data) {
-        pushConfiguration.id = Number(pushConfiguration.id);
-        // TODO: cast other fields
-        // TODO: validate datatypes
-      }
+        // Cast and validate CSV fields
+        for (const pushConfiguration of data) {
+          pushConfiguration.id = Number(pushConfiguration.id);
+          // TODO: cast other fields
+          // TODO: validate datatypes
+        }
 
-      return data;
-    });
+        return data;
+      });
+  }
 
   /**
    * Clusters
    */
-  console.log(`Loading kerlink clusters from ${CLUSTERS_PATH} ...`);
-  const clusters: KerlinkCluster[] = await csv()
-    .fromFile(CLUSTERS_PATH)
-    .then((data: KerlinkClusterCsv[]) => {
-      console.log(`Found ${data.length} clusters!`);
+  var clusters: KerlinkCluster[] = [];
+  if (!fs.existsSync(CLUSTERS_PATH)) {
+    console.log(
+      `File ${CLUSTERS_PATH} not found: clusters will not be imported!`
+    );
+  } else {
+    console.log(
+      `Loading kerlink push configurations from ${PUSHCONFIGURATIONS_PATH} ...`
+    );
+    clusters = await csv()
+      .fromFile(CLUSTERS_PATH)
+      .then((data: KerlinkClusterCsv[]) => {
+        console.log(`Found ${data.length} clusters!`);
 
-      // Cast and validate CSV fields
-      const result: KerlinkCluster[] = [];
-      for (const clusterCsv of data) {
-        clusterCsv.id = Number(clusterCsv.id);
-        clusterCsv.pushConfiguration = JSON.parse(
-          (clusterCsv as any).pushConfiguration
-        );
-        // TODO: cast other fields
-        // TODO: validate datatypes
+        // Cast and validate CSV fields
+        const result: KerlinkCluster[] = [];
+        for (const clusterCsv of data) {
+          clusterCsv.id = Number(clusterCsv.id);
+          clusterCsv.pushConfiguration = JSON.parse(
+            (clusterCsv as any).pushConfiguration
+          );
+          // TODO: cast other fields
+          // TODO: validate datatypes
 
-        // Recollect devices and push configurations already parsed
-        const cluster: KerlinkCluster = {
-          id: Number(clusterCsv.id),
-          name: clusterCsv.name,
-          devices: devices.filter((dev) => dev.clusterId == clusterCsv.id),
-          pushConfigurations: pushConfigurations.filter(
-            (pc) => pc.id == clusterCsv.pushConfiguration.id
-          ),
-        };
+          // Recollect devices and push configurations already parsed
+          const cluster: KerlinkCluster = {
+            id: clusterCsv.id,
+            name: clusterCsv.name,
+            devices: devices.filter((dev) => dev.clusterId == clusterCsv.id),
+            pushConfigurations: pushConfigurations.filter(
+              (pc) => pc.id == clusterCsv.pushConfiguration.id
+            ),
+          };
 
-        result.push(cluster);
-      }
+          result.push(cluster);
+        }
 
-      return result;
-    });
+        return result;
+      });
+  }
+
+  console.debug(`Clusters loading complete!`);
+  console.debug(`*************************************`);
 
   return clusters;
 }

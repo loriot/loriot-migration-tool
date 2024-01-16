@@ -10,6 +10,8 @@ services:
       - ./data/clusters.csv:/data/clusters.csv
       - ./data/devices.csv:/data/devices.csv
       - ./data/pushConfigurations.csv:/data/pushConfigurations.csv
+      - ./data/fleets.csv:/data/fleets.csv
+      - ./data/gateways.csv:/data/gateways.csv
     environment:
       - URL=${URL}
       - AUTH=${AUTH}
