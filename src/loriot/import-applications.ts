@@ -4,7 +4,7 @@ import {
   KerlinkPushConfiguration,
 } from '../kerlink/load-clusters';
 import axios, { AxiosResponse } from 'axios';
-import { getErrorMessage } from '../utils';
+import { addLeadingZeros, getErrorMessage } from '../utils';
 
 type LoriotApplication = {
   name: string;
@@ -24,8 +24,8 @@ type LoriotDevice = {
   devVersion: eDeviceVersion;
   devActivation: eDeviceActivation;
   lorawan: lorawanVersion;
-  appkey: string;
-  appeui: string;
+  appkey?: string;
+  appeui?: string;
   devaddr: string;
   nwkskey: string;
   appskey: string;
@@ -172,18 +172,21 @@ function translateKerlinkDevice(kerlinkDevice: KerlinkDevice): LoriotDevice {
     devActivation: kerlinkDevice.activation as eDeviceActivation,
     devVersion: lorawan.minor == 0 ? eDeviceVersion.v10 : eDeviceVersion.v11,
     lorawan,
-    appkey: kerlinkDevice.appKey,
-    appeui: kerlinkDevice.appEui,
-    devaddr: kerlinkDevice.dev_addr,
-    nwkskey: kerlinkDevice.NwkSKey,
-    appskey: kerlinkDevice.AppSKey,
-    canSendADR: kerlinkDevice.adrEnabled,
-    rxw: kerlinkDevice.rxWindows,
-    rx1Delay: kerlinkDevice.rx1Delay,
-    seqno: kerlinkDevice.fcntUp,
-    seqdn: kerlinkDevice.fcntDown,
+    devaddr: addLeadingZeros(kerlinkDevice.dev_addr, 8).toUpperCase(),
+    nwkskey: addLeadingZeros(kerlinkDevice.NwkSKey, 32).toUpperCase(),
+    appskey: addLeadingZeros(kerlinkDevice.AppSKey, 32).toUpperCase(),
+    canSendADR: kerlinkDevice.adrEnabled ?? true,
+    rxw: kerlinkDevice.rxWindows ?? 1,
+    rx1Delay: kerlinkDevice.rx1Delay ?? 1,
+    seqno: kerlinkDevice.fcntUp ?? 0,
+    seqdn: kerlinkDevice.fcntDown ?? 0,
     seqq: 0,
   };
+
+  if (dev.devActivation == eDeviceActivation.OTAA) {
+    dev.appeui = addLeadingZeros(kerlinkDevice.appEui, 16).toUpperCase();
+    dev.appkey = addLeadingZeros(kerlinkDevice.appKey, 32).toUpperCase();
+  }
 
   return dev;
 }
@@ -225,9 +228,13 @@ async function createOutput(appId: string, out: LoriotOutput): Promise<string> {
 
 async function createDevice(appId: string, dev: LoriotDevice): Promise<string> {
   return axios
-    .post(`https://${process.env.URL}/1/nwk/app/${appId}/devices`, dev, {
-      headers: { Authorization: process.env.AUTH },
-    })
+    .post(
+      `https://${process.env.URL}/1/nwk/app/${appId}/devices/${dev.devActivation}`,
+      dev,
+      {
+        headers: { Authorization: process.env.AUTH },
+      }
+    )
     .then((res: AxiosResponse) => {
       return res.data._id.toString(16).toUpperCase();
     });

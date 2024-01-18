@@ -10,10 +10,10 @@ W.I.P. tool to migrate resources from Kerlink Wanesy Management Center to LORIOT
   - For devices migration:
     - Clusters CSV file
     - Push Configurations CSV file
-    - End-devices CSV file (extended with dev_addr, AppSKey and NwkSKey columns)
+    - End-devices CSV file (extended with `dev_addr`, `AppSKey` and `NwkSKey` columns)
   - For gateways migration:
     - Fleets CSV file
-    - (SKIP IF MIGRATE VIA KERLINK ZTP) Gateways CSV file (extended with eth0MAC column)
+    - (SKIP IF MIGRATE VIA KERLINK ZTP) Gateways CSV file (extended with `eth0MAC` column)
 
 ## Build
 
