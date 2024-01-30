@@ -8,7 +8,7 @@ type KerlinkClusterCsv = {
   id: number;
   name: string;
   pushEnabled: boolean;
-  pushConfiguration: {
+  pushConfiguration?: {
     id: number;
     links: {
       rel: string;
@@ -120,15 +120,34 @@ export async function loadKerlinkClusters(): Promise<KerlinkCluster[]> {
   );
   const clusters: KerlinkCluster[] = await loadCsvFile(CLUSTERS_PATH).then(
     (data: KerlinkClusterCsv[]) => {
+      if (data.length == 0) {
+        // No clusters.csv file, let's get clusters from devices
+        for (const device of devices) {
+          const cluster = data.find(
+            (cluster) => cluster.id == device.clusterId
+          );
+          if (!cluster) {
+            // First time for this cluster, save it
+            data.push({
+              id: device.clusterId,
+              name: device.clusterName ?? `Cluster ${device.clusterId}`,
+              pushEnabled: false,
+            });
+          }
+        }
+      }
+
       console.log(`Found ${data.length} clusters!`);
 
       const result: KerlinkCluster[] = [];
       for (const clusterCsv of data) {
         // TODO: validate expected fields
 
-        clusterCsv.pushConfiguration = JSON.parse(
-          (clusterCsv as any).pushConfiguration
-        );
+        if (clusterCsv.pushConfiguration) {
+          clusterCsv.pushConfiguration = JSON.parse(
+            (clusterCsv as any).pushConfiguration
+          );
+        }
 
         // Recollect devices and push configurations already parsed
         const cluster: KerlinkCluster = {
@@ -136,7 +155,7 @@ export async function loadKerlinkClusters(): Promise<KerlinkCluster[]> {
           name: clusterCsv.name,
           devices: devices.filter((dev) => dev.clusterId == clusterCsv.id),
           pushConfigurations: pushConfigurations.filter(
-            (pc) => pc.id == clusterCsv.pushConfiguration.id
+            (pc) => pc.id == clusterCsv.pushConfiguration?.id
           ),
         };
 

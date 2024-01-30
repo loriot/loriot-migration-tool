@@ -18,7 +18,7 @@ type LoriotOutput = {
 };
 
 type LoriotDevice = {
-  name: string;
+  title: string;
   deveui: string;
   devclass: eDeviceClass;
   devVersion: eDeviceVersion;
@@ -166,7 +166,7 @@ function translateKerlinkDevice(kerlinkDevice: KerlinkDevice): LoriotDevice {
   };
 
   const dev: LoriotDevice = {
-    name: kerlinkDevice.name,
+    title: kerlinkDevice.name,
     deveui: kerlinkDevice.devEui,
     devclass: kerlinkDevice.classType as eDeviceClass,
     devActivation: kerlinkDevice.activation as eDeviceActivation,
@@ -176,10 +176,12 @@ function translateKerlinkDevice(kerlinkDevice: KerlinkDevice): LoriotDevice {
     nwkskey: addLeadingZeros(kerlinkDevice.NwkSKey, 32).toUpperCase(),
     appskey: addLeadingZeros(kerlinkDevice.AppSKey, 32).toUpperCase(),
     canSendADR: kerlinkDevice.adrEnabled ?? true,
-    rxw: kerlinkDevice.rxWindows ?? 1,
+    rxw:
+      kerlinkDevice.rxWindows ??
+      (kerlinkDevice.classType == eDeviceClass.C ? 2 : 1), // If class C use RXW2 as default
     rx1Delay: kerlinkDevice.rx1Delay ?? 1,
     seqno: kerlinkDevice.fcntUp ?? 0,
-    seqdn: kerlinkDevice.fcntDown ?? 0,
+    seqdn: kerlinkDevice.fcntDown ? kerlinkDevice.fcntDown + 1 : 0, // LORIOT will use this value for the next downlink, while kerlink fcntDown is the last used. So increment it +1
     seqq: 0,
   };
 
