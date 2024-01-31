@@ -35,3 +35,7 @@ W.I.P. tool to migrate resources from Kerlink Wanesy Management Center to LORIOT
    - `URL`: LORIOT NMS url (example: `eu1.loriot.io`)
    - `AUTH`: LORIOT API authorization header (example: `Bearer AAAAAgvm9WBrwSdUFQ7_SB1ItnTnxbJDfXE6RjbUBNdeVmfG8`)
 3. `docker-compose up`
+
+note: the script will check if there's already a LORIOT application with the same cluster name, if so will create the devices there (to reuse already existing applications)
+
+note: if the device already exists, it will be deleted and created again (to update its parameters)
