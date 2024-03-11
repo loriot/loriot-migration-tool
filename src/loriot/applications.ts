@@ -1,23 +1,18 @@
-import {
-  KerlinkCluster,
-  KerlinkDevice,
-  KerlinkPushConfiguration,
-} from '../kerlink/load-clusters';
 import axios, { AxiosError, AxiosResponse } from 'axios';
-import { addLeadingZeros, getErrorMessage } from '../utils';
+import { getErrorMessage } from '../utils';
 
-type LoriotApplication = {
+export type LoriotApplication = {
   name: string;
   outputs: LoriotOutput[];
   devices: LoriotDevice[];
 };
 
-type LoriotOutput = {
+export type LoriotOutput = {
   name: string;
   url: string;
 };
 
-type LoriotDevice = {
+export type LoriotDevice = {
   title: string;
   deveui: string;
   devclass: eDeviceClass;
@@ -37,41 +32,30 @@ type LoriotDevice = {
   seqq: number;
 };
 
-type lorawanVersion = { major: number; minor: number; revision: string };
+export type lorawanVersion = { major: number; minor: number; revision: string };
 
-enum eDeviceClass {
+export enum eDeviceClass {
   A = 'A',
   C = 'C',
 }
 
-enum eDeviceVersion {
+export enum eDeviceVersion {
   v10 = 'v1.0',
   v11 = 'v1.1',
 }
 
-enum eDeviceActivation {
+export enum eDeviceActivation {
   ABP = 'ABP',
   OTAA = 'OTAA',
 }
 
-export async function migrateClusters(kerlinkClusters: KerlinkCluster[]) {
-  console.debug(`Migrating clusters to LORIOT ...`);
-
-  /**
-   * Translate from Kerlink to LORIOT
-   */
-  const apps: LoriotApplication[] = [];
-  for (const kerlinkCluster of kerlinkClusters) {
-    // Prepare LORIOT device
-    const app: LoriotApplication = translateKerlinkCluster(kerlinkCluster);
-    // Add device to application list
-    apps.push(app);
-  }
+export async function importApplications(applications: LoriotApplication[]) {
+  console.debug(`Importing applications to LORIOT ...`);
 
   /**
    * Call LORIOT API to create recourses
    */
-  for (const app of apps) {
+  for (const app of applications) {
     try {
       // Check if application already exists on LORIOT (by Name) to support multiple import attempts
       var appId = await getApp(app);
@@ -139,81 +123,8 @@ export async function migrateClusters(kerlinkClusters: KerlinkCluster[]) {
     }
   }
 
-  console.debug(`Clusters migration complete!`);
+  console.debug(`Applications migration complete!`);
   console.debug(`*************************************`);
-}
-
-function translateKerlinkCluster(
-  kerlinkCluster: KerlinkCluster
-): LoriotApplication {
-  const app: LoriotApplication = {
-    name: kerlinkCluster.name,
-    outputs: [],
-    devices: [],
-  };
-
-  // Translate outputs
-  for (const kerlinkPushConfiguration of kerlinkCluster.pushConfigurations) {
-    const out: LoriotOutput = translateKerlinkPushConfigurations(
-      kerlinkPushConfiguration
-    );
-    app.outputs.push(out);
-  }
-
-  // Translate devices
-  for (const kerlinkDevice of kerlinkCluster.devices) {
-    const dev: LoriotDevice = translateKerlinkDevice(kerlinkDevice);
-    app.devices.push(dev);
-  }
-
-  return app;
-}
-
-function translateKerlinkPushConfigurations(
-  kerlinkPushConfiguration: KerlinkPushConfiguration
-): LoriotOutput {
-  // only minimal HTTP supported
-  // TODO: support headers, certs and MQTT
-  return {
-    name: kerlinkPushConfiguration.name,
-    url: kerlinkPushConfiguration.url,
-  };
-}
-
-function translateKerlinkDevice(kerlinkDevice: KerlinkDevice): LoriotDevice {
-  const splittedMacVersion = kerlinkDevice.macVersion.split('.');
-  const lorawan: lorawanVersion = {
-    major: Number(splittedMacVersion[0]),
-    minor: Number(splittedMacVersion[1]),
-    revision: splittedMacVersion[2],
-  };
-
-  const dev: LoriotDevice = {
-    title: kerlinkDevice.name,
-    deveui: kerlinkDevice.devEui,
-    devclass: kerlinkDevice.classType as eDeviceClass,
-    devActivation: kerlinkDevice.activation as eDeviceActivation,
-    devVersion: lorawan.minor == 0 ? eDeviceVersion.v10 : eDeviceVersion.v11,
-    lorawan,
-    devaddr: addLeadingZeros(kerlinkDevice.dev_addr, 8).toUpperCase(),
-    nwkskey: addLeadingZeros(kerlinkDevice.NwkSKey, 32).toUpperCase(),
-    appskey: addLeadingZeros(kerlinkDevice.AppSKey, 32).toUpperCase(),
-    canSendADR: kerlinkDevice.adrEnabled ?? true,
-    rxw:
-      kerlinkDevice.rxWindows ??
-      (kerlinkDevice.classType == eDeviceClass.C ? 2 : 1), // If class C use RXW2 as default
-    rx1Delay: kerlinkDevice.rx1Delay ?? 1,
-    seqno: kerlinkDevice.fcntUp ?? 0,
-    seqdn: kerlinkDevice.fcntDown ? kerlinkDevice.fcntDown + 1 : 0, // LORIOT will use this value for the next downlink, while kerlink fcntDown is the last used. So increment it +1
-    seqq: 0,
-  };
-
-  if (dev.devActivation == eDeviceActivation.OTAA) {
-    dev.appeui = addLeadingZeros(kerlinkDevice.appEui, 16).toUpperCase();
-    dev.appkey = addLeadingZeros(kerlinkDevice.appKey, 32).toUpperCase();
-  }
-
-  return dev;
 }
 
 async function getApp(app: LoriotApplication): Promise<string> {

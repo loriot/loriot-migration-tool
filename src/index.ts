@@ -1,7 +1,7 @@
-import { loadKerlinkClusters } from './kerlink/load-clusters';
-import { loadKerlinkFleets } from './kerlink/load-fleets';
-import { migrateClusters } from './loriot/import-applications';
-import { migrateFleets } from './loriot/import-networks';
+import { loadKerlinkClusters } from './kerlink/clusters';
+import { loadKerlinkFleets } from './kerlink/fleets';
+import { importApplications } from './loriot/applications';
+import { importNetworks } from './loriot/networks';
 
 (async () => {
   try {
@@ -11,19 +11,16 @@ import { migrateFleets } from './loriot/import-networks';
     console.debug(`*************************************`);
 
     // Load devices from kerlink csv
-    const clusters = await loadKerlinkClusters();
+    const applications = await loadKerlinkClusters();
 
     // Load gateways from kerlink csv
-    const fleets = await loadKerlinkFleets();
+    const networks = await loadKerlinkFleets();
 
-    // Migrate clusters, push configurations and devices
-    if (clusters.length > 0) {
-      await migrateClusters(clusters);
+    if (applications.length > 0) {
+      await importApplications(applications);
     }
-
-    // Migrate fleets and gateways
-    if (fleets.length > 0) {
-      await migrateFleets(fleets);
+    if (networks.length > 0) {
+      await importNetworks(networks);
     }
 
     process.exit(0);
