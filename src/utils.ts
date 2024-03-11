@@ -71,3 +71,7 @@ export function addLeadingZeros(hex: string, length: number): string {
   while (hex.length < length) hex = '0' + hex;
   return hex;
 }
+
+export async function sleep(ms: number): Promise<void> {
+  return new Promise<void>((resolve) => setTimeout(() => resolve(), ms));
+}

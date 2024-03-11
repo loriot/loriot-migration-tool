@@ -8,7 +8,9 @@ export type LoriotNetwork = {
 
 export type LoriotGateway = {
   title: string;
-  EUI: string;
+  notes?: string;
+  /* custom EUI to be used only with basics station or packet forwarder */
+  customEUI?: string;
   MAC: string;
   region: string;
   location: {};
@@ -27,10 +29,18 @@ export async function importNetworks(networks: LoriotNetwork[]) {
    */
   for (const net of networks) {
     try {
-      // Create application
-      console.debug(`[${net.name}] Creating network ...`);
-      const netId = await createNet(net);
-      console.debug(`[${net.name}] Network created!`);
+      // Check if network already exists on LORIOT (by Name) to support multiple import attempts
+      var netId = await getNetwork(net);
+      if (!netId) {
+        // Create application
+        console.debug(`[${net.name}] Creating network ...`);
+        netId = await createNet(net);
+        console.debug(`[${net.name}] Network created!`);
+      } else {
+        console.debug(
+          `[${net.name}] Reusing already existing network ${netId}!`
+        );
+      }
 
       // Create gateways
       for (const gw of net.gateways) {
@@ -55,6 +65,23 @@ export async function importNetworks(networks: LoriotNetwork[]) {
 
   console.debug(`Networks migration complete!`);
   console.debug(`*************************************`);
+}
+
+async function getNetwork(network: LoriotNetwork): Promise<string> {
+  return axios
+    .get(
+      `https://${process.env.URL}/1/nwk/networks?filter=name=${network.name}`,
+      {
+        headers: { Authorization: process.env.AUTH },
+      }
+    )
+    .then((res: AxiosResponse) => {
+      if (res.data.networks.length > 0) {
+        return res.data.networks[0]._id.toString(16).toUpperCase();
+      } else {
+        return undefined;
+      }
+    });
 }
 
 async function createNet(name: LoriotNetwork): Promise<string> {
@@ -84,6 +111,7 @@ async function createGateway(
       {
         title: gw.title,
         MAC: gw.MAC,
+        customEUI: gw.customEUI,
         location: gw.location,
         base: gw.base,
         bus: gw.bus,

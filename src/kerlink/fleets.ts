@@ -97,7 +97,6 @@ function translateKerlinkGateway(
 ): LoriotGateway {
   const gw: LoriotGateway = {
     title: kerlinkGateway.name,
-    EUI: kerlinkGateway.eui,
     MAC: kerlinkGateway.eth0MAC,
     region: kerlinkGateway.region,
     location: {

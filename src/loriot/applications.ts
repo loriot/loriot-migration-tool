@@ -129,7 +129,7 @@ export async function importApplications(applications: LoriotApplication[]) {
 
 async function getApp(app: LoriotApplication): Promise<string> {
   return axios
-    .get(`https://${process.env.URL}/1/nwk/apps?filter=name~${app.name}`, {
+    .get(`https://${process.env.URL}/1/nwk/apps?filter=name=${app.name}`, {
       headers: { Authorization: process.env.AUTH },
     })
     .then((res: AxiosResponse) => {
