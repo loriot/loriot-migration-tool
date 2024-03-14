@@ -1,3 +1,4 @@
+import { loadChirpstackApplications } from './chirpstack/applications';
 import { loadChirpstackGateways } from './chirpstack/gateways';
 import { loadKerlinkClusters } from './kerlink/clusters';
 import { loadKerlinkFleets } from './kerlink/fleets';
@@ -22,6 +23,11 @@ import { LoriotNetwork, importNetworks } from './loriot/networks';
       process.env.CHIRPSTACK_TENANT_ID
     ) {
       // CHIRPSTACK
+      applications = await loadChirpstackApplications(
+        process.env.CHIRPSTACK_URL,
+        process.env.CHIRPSTACK_API_TOKEN,
+        process.env.CHIRPSTACK_TENANT_ID
+      );
       networks = [
         await loadChirpstackGateways(
           process.env.CHIRPSTACK_URL,

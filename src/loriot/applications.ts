@@ -21,9 +21,9 @@ export type LoriotDevice = {
   lorawan: lorawanVersion;
   appkey?: string;
   appeui?: string;
-  devaddr: string;
-  nwkskey: string;
-  appskey: string;
+  devaddr?: string;
+  nwkskey?: string;
+  appskey?: string;
   canSendADR: boolean;
   rxw: number;
   rx1Delay: number;
@@ -182,7 +182,9 @@ async function deleteDevice(
 ): Promise<boolean> {
   return axios
     .delete(
-      `https://${process.env.URL}/1/nwk/app/${appId}/device/${dev.deveui}`,
+      `https://${
+        process.env.URL
+      }/1/nwk/app/${appId}/device/${dev.deveui.toUpperCase()}`,
       {
         headers: { Authorization: process.env.AUTH },
       }
