@@ -2,6 +2,7 @@ import {
   LoriotApplication,
   LoriotDevice,
   LoriotHttpKerlinkOutput,
+  LoriotMqttKerlinkOutput,
   LoriotOutput,
   LoriotWebsocketKerlinkOutput,
   eDeviceActivation,
@@ -321,6 +322,41 @@ function translateKerlinkPushConfigurations(
 
       return ws;
     case eKerlinkPushConfigurationType.MQTT:
+      if (!kerlinkPushConfiguration.mqttHost) {
+        throw new Error(
+          `Missing 'mqttHost' for Push Configuration ${kerlinkPushConfiguration.id}`
+        );
+      }
+
+      const mqtt: LoriotMqttKerlinkOutput = {
+        output: 'kerlink_mqtt',
+        osetup: {
+          name: kerlinkPushConfiguration.name,
+          verbosity: translateKerlinkVerbosity(
+            kerlinkPushConfiguration.msgDetailLevel
+          ),
+          encoding: hexa
+            ? eLoriotKerlinkOutputEncoding.HEXA
+            : eLoriotKerlinkOutputEncoding.BASE64,
+          host: kerlinkPushConfiguration.mqttHost,
+          port: kerlinkPushConfiguration.mqttPort ?? 1883,
+          clientid: kerlinkPushConfiguration.mqttClientId,
+          timeout: kerlinkPushConfiguration.mqttConnectionTimeout ?? 30,
+          keepalive: kerlinkPushConfiguration.mqttKeepAlive ?? 30,
+          tls: kerlinkPushConfiguration.mqttTlsEnabled ? 1 : 0,
+          clean: kerlinkPushConfiguration.mqttCleanSession ? 1 : 0,
+          user: kerlinkPushConfiguration.user,
+          password: kerlinkPushConfiguration.password,
+          dataup_topic: kerlinkPushConfiguration.mqttDataUpTopic,
+          datadownevent_topic: kerlinkPushConfiguration.mqttDataDownEventTopic,
+          qos: kerlinkPushConfiguration.mqttQoS ?? 0,
+          will_topic: kerlinkPushConfiguration.mqttWillTopic,
+          will_payload: kerlinkPushConfiguration.mqttWillPayload,
+          will_qos: kerlinkPushConfiguration.mqttWillQoS,
+        },
+      };
+
+      return mqtt;
     default:
       throw new Error(
         `Unknown Push Configuration type ${kerlinkPushConfiguration.type}`
