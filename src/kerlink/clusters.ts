@@ -1,10 +1,13 @@
 import {
   LoriotApplication,
   LoriotDevice,
+  LoriotHttpKerlinkOutput,
   LoriotOutput,
   eDeviceActivation,
   eDeviceClass,
   eDeviceVersion,
+  eLoriotKerlinkOutputEncoding,
+  eLoriotKerlinkOutputVerbosity,
   lorawanVersion,
 } from '../loriot/applications';
 import { addLeadingZeros, loadCsvFile } from '../utils';
@@ -16,6 +19,7 @@ const PUSHCONFIGURATIONS_PATH = './data/pushConfigurations.csv';
 type KerlinkClusterCsv = {
   id: number;
   name: string;
+  hexa: boolean;
   pushEnabled: boolean;
   pushConfiguration?: {
     id: number;
@@ -29,26 +33,58 @@ type KerlinkClusterCsv = {
 export type KerlinkCluster = {
   id: number;
   name: string;
+  hexa: boolean;
   pushConfigurations: KerlinkPushConfiguration[];
   devices: KerlinkDevice[];
 };
 
+export enum eKerlinkPushConfigurationType {
+  HTTP = 'HTTP',
+  MQTT = 'MQTT',
+  WEBSOCKET = 'WEBSOCKET',
+}
+
+export enum eKerlinkPushConfigurationMsgDetailLevel {
+  PAYLOAD = 'PAYLOAD',
+  RADIO = 'RADIO',
+  NETWORK = 'NETWORK',
+}
+
 export type KerlinkPushConfiguration = {
   id: number;
   name: string;
-  type: string;
-  msgDetailLevel: 'PAYLOAD' | 'RADIO' | 'NETWORK';
+  type: eKerlinkPushConfigurationType;
+  msgDetailLevel: eKerlinkPushConfigurationMsgDetailLevel;
+
+  // HTTP / WS
+  url?: string;
+  user?: string;
+  password?: string; // always null
+  headers: { key: string; value: string }[];
+  tlsCertFileName?: string; // useless
+  tlsKeyFileName?: string; // useless
+  tlsCaFileName?: string; // useless
 
   // HTTP
-  url: string;
-  user: string;
-  password: string;
-  httpDataUpRoute: string;
-  httpDataDownEventRoute: string;
-  headers: string;
-  tlsCertFileName: string;
-  tlsKeyFileName: string;
-  tlsCaFileName: string;
+  httpDataUpRoute?: string;
+  httpDataDownEventRoute?: string;
+
+  // MQTT
+  mqttHost?: string;
+  mqttPort?: number;
+  mqttTlsEnabled?: boolean;
+  mqttClientId?: string;
+  mqttConnectionTimeout?: number;
+  mqttKeepAlive?: number;
+  mqttCleanSession?: boolean;
+  mqttQoS?: number;
+  mqttUser?: string;
+  mqttPassword?: string;
+  mqttDataUpTopic?: string;
+  mqttDataDownEventTopic?: string;
+  mqttWillTopic?: string;
+  mqttWillPayload?: string;
+  mqttWillQoS?: number;
 };
 
 export type KerlinkDevice = {
@@ -140,6 +176,7 @@ export async function loadKerlinkClusters(): Promise<LoriotApplication[]> {
             data.push({
               id: device.clusterId,
               name: device.clusterName ?? `Cluster ${device.clusterId}`,
+              hexa: true,
               pushEnabled: false,
             });
           }
@@ -162,6 +199,7 @@ export async function loadKerlinkClusters(): Promise<LoriotApplication[]> {
         const cluster: KerlinkCluster = {
           id: clusterCsv.id,
           name: clusterCsv.name,
+          hexa: clusterCsv.hexa,
           devices: devices.filter((dev) => dev.clusterId == clusterCsv.id),
           pushConfigurations: pushConfigurations.filter(
             (pc) => pc.id == clusterCsv.pushConfiguration?.id
@@ -202,10 +240,17 @@ function translateKerlinkCluster(
 
   // Translate outputs
   for (const kerlinkPushConfiguration of kerlinkCluster.pushConfigurations) {
-    const out: LoriotOutput = translateKerlinkPushConfigurations(
-      kerlinkPushConfiguration
-    );
-    app.outputs.push(out);
+    try {
+      const out: LoriotOutput = translateKerlinkPushConfigurations(
+        kerlinkPushConfiguration,
+        kerlinkCluster.hexa
+      );
+      app.outputs.push(out);
+    } catch (err: any) {
+      console.log(
+        `Unable to translate push configuration "${kerlinkPushConfiguration.name}": ${err.message}`
+      );
+    }
   }
 
   // Translate devices
@@ -218,14 +263,59 @@ function translateKerlinkCluster(
 }
 
 function translateKerlinkPushConfigurations(
-  kerlinkPushConfiguration: KerlinkPushConfiguration
+  kerlinkPushConfiguration: KerlinkPushConfiguration,
+  hexa: boolean
 ): LoriotOutput {
-  // only minimal HTTP supported
-  // TODO: support headers, certs and MQTT
-  return {
-    name: kerlinkPushConfiguration.name,
-    url: kerlinkPushConfiguration.url,
-  };
+  switch (kerlinkPushConfiguration.type) {
+    case eKerlinkPushConfigurationType.HTTP:
+      if (!kerlinkPushConfiguration.url) {
+        throw new Error(
+          `Missing 'url' for Push Configuration ${kerlinkPushConfiguration.id}`
+        );
+      }
+
+      const out: LoriotHttpKerlinkOutput = {
+        output: 'kerlink_http',
+        osetup: {
+          name: kerlinkPushConfiguration.name,
+          verbosity: translateKerlinkVerbosity(
+            kerlinkPushConfiguration.msgDetailLevel
+          ),
+          encoding: hexa
+            ? eLoriotKerlinkOutputEncoding.HEXA
+            : eLoriotKerlinkOutputEncoding.BASE64,
+          url: kerlinkPushConfiguration.url,
+          user: kerlinkPushConfiguration.user,
+          password: kerlinkPushConfiguration.password,
+          dataup_route: kerlinkPushConfiguration.httpDataUpRoute,
+          datadownevent_route: kerlinkPushConfiguration.httpDataDownEventRoute,
+          custom_headers: kerlinkPushConfiguration.headers,
+        },
+      };
+
+      return out;
+    case 'WEBSOCKET':
+    case 'MQTT':
+    default:
+      throw new Error(
+        `Unknown Push Configuration type ${kerlinkPushConfiguration.type}`
+      );
+  }
+}
+
+function translateKerlinkVerbosity(
+  msgDetailLevel: eKerlinkPushConfigurationMsgDetailLevel
+): eLoriotKerlinkOutputVerbosity {
+  switch (msgDetailLevel) {
+    case eKerlinkPushConfigurationMsgDetailLevel.RADIO:
+      return eLoriotKerlinkOutputVerbosity.RADIO;
+    case eKerlinkPushConfigurationMsgDetailLevel.PAYLOAD:
+      return eLoriotKerlinkOutputVerbosity.PAYLOAD;
+    case eKerlinkPushConfigurationMsgDetailLevel.NETWORK:
+      return eLoriotKerlinkOutputVerbosity.NETWORK;
+    default:
+      throw new Error(`unknown msgDetailLevel ${msgDetailLevel}`);
+  }
 }
 
 function translateKerlinkDevice(kerlinkDevice: KerlinkDevice): LoriotDevice {

@@ -7,10 +7,53 @@ export type LoriotApplication = {
   devices: LoriotDevice[];
 };
 
-export type LoriotOutput = {
-  name: string;
-  url: string;
-};
+export interface LoriotOutput {
+  output: string;
+  osetup: any;
+}
+
+export interface LoriotHTTPOutput extends LoriotOutput {
+  output: 'httppush';
+  osetup: {
+    name: string;
+    url: string;
+  };
+}
+
+export enum eLoriotKerlinkOutputType {
+  HTTP = 'kerlink_http',
+  MQTT = 'kerlink_mqtt',
+  WEBSOCKET = 'kerlink_websocket',
+}
+
+export enum eLoriotKerlinkOutputVerbosity {
+  PAYLOAD = 'Payload',
+  RADIO = 'Radio',
+  NETWORK = 'Network',
+}
+
+export enum eLoriotKerlinkOutputEncoding {
+  HEXA = 'HEXA',
+  BASE64 = 'BASE64',
+}
+
+export interface LoriotHttpKerlinkOutput extends LoriotOutput {
+  output: 'kerlink_http';
+  osetup: {
+    name?: string;
+    verbosity: eLoriotKerlinkOutputVerbosity;
+    encoding: eLoriotKerlinkOutputEncoding;
+    url: string;
+    user?: string;
+    password?: string;
+    dataup_route?: string;
+    datadownevent_route?: string;
+    cert?: string; // Not exported by WMC
+    key?: string; // Not exported by WMC
+    ca?: string; // Not exported by WMC
+    custom_headers?: { key: string; value: string }[];
+  };
+}
 
 export type LoriotDevice = {
   title: string;
@@ -73,13 +116,17 @@ export async function importApplications(applications: LoriotApplication[]) {
       // Create outputs
       for (const out of app.outputs) {
         try {
-          console.debug(`[${app.name}][OUT][${out.name}] Creating output ...`);
+          console.debug(
+            `[${app.name}][OUT][${out.osetup.name}] Creating output ...`
+          );
           await createOutput(appId, out);
-          console.debug(`[${app.name}][OUT][${out.name}] Output created!`);
+          console.debug(
+            `[${app.name}][OUT][${out.osetup.name}] Output created!`
+          );
         } catch (err: any) {
           console.error(
             `[${app.name}][OUT][${
-              out.name
+              out.osetup.name
             }] Output creation error: ${getErrorMessage(err)}`
           );
         }
@@ -147,7 +194,7 @@ async function createApp(app: LoriotApplication): Promise<string> {
       `https://${process.env.URL}/1/nwk/apps`,
       {
         title: app.name,
-        capacity: app.devices.length,
+        capacity: app.devices.length > 0 ? app.devices.length : 1,
         visibility: 'private',
         mcastdevlimit: 0,
       },
@@ -163,13 +210,7 @@ async function createApp(app: LoriotApplication): Promise<string> {
 async function createOutput(appId: string, out: LoriotOutput): Promise<string> {
   return axios.post(
     `https://${process.env.URL}/1/nwk/app/${appId}/outputs`,
-    {
-      output: 'httppush',
-      osetup: {
-        name: out.name,
-        url: out.url,
-      },
-    },
+    out,
     {
       headers: { Authorization: process.env.AUTH },
     }

@@ -67,8 +67,11 @@ function translateHttpIntegration(
   httpIntegration: HttpIntegration.AsObject
 ): LoriotOutput {
   return {
-    name: 'HTTP',
-    url: httpIntegration.eventEndpointUrl,
-    // TODO: headers
+    output: 'httppush',
+    osetup: {
+      name: 'HTTP',
+      url: httpIntegration.eventEndpointUrl,
+      // TODO: headers
+    },
   };
 }
