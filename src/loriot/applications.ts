@@ -55,6 +55,22 @@ export interface LoriotHttpKerlinkOutput extends LoriotOutput {
   };
 }
 
+export interface LoriotWebsocketKerlinkOutput extends LoriotOutput {
+  output: 'kerlink_websocket';
+  osetup: {
+    name?: string;
+    verbosity: eLoriotKerlinkOutputVerbosity;
+    encoding: eLoriotKerlinkOutputEncoding;
+    url: string;
+    user?: string;
+    password?: string;
+    cert?: string; // Not exported by WMC
+    key?: string; // Not exported by WMC
+    ca?: string; // Not exported by WMC
+    custom_headers?: { key: string; value: string }[];
+  };
+}
+
 export type LoriotDevice = {
   title: string;
   deveui: string;

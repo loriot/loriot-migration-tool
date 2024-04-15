@@ -3,6 +3,7 @@ import {
   LoriotDevice,
   LoriotHttpKerlinkOutput,
   LoriotOutput,
+  LoriotWebsocketKerlinkOutput,
   eDeviceActivation,
   eDeviceClass,
   eDeviceVersion,
@@ -274,7 +275,7 @@ function translateKerlinkPushConfigurations(
         );
       }
 
-      const out: LoriotHttpKerlinkOutput = {
+      const http: LoriotHttpKerlinkOutput = {
         output: 'kerlink_http',
         osetup: {
           name: kerlinkPushConfiguration.name,
@@ -293,9 +294,33 @@ function translateKerlinkPushConfigurations(
         },
       };
 
-      return out;
-    case 'WEBSOCKET':
-    case 'MQTT':
+      return http;
+    case eKerlinkPushConfigurationType.WEBSOCKET:
+      if (!kerlinkPushConfiguration.url) {
+        throw new Error(
+          `Missing 'url' for Push Configuration ${kerlinkPushConfiguration.id}`
+        );
+      }
+
+      const ws: LoriotWebsocketKerlinkOutput = {
+        output: 'kerlink_websocket',
+        osetup: {
+          name: kerlinkPushConfiguration.name,
+          verbosity: translateKerlinkVerbosity(
+            kerlinkPushConfiguration.msgDetailLevel
+          ),
+          encoding: hexa
+            ? eLoriotKerlinkOutputEncoding.HEXA
+            : eLoriotKerlinkOutputEncoding.BASE64,
+          url: kerlinkPushConfiguration.url,
+          user: kerlinkPushConfiguration.user,
+          password: kerlinkPushConfiguration.password,
+          custom_headers: kerlinkPushConfiguration.headers,
+        },
+      };
+
+      return ws;
+    case eKerlinkPushConfigurationType.MQTT:
     default:
       throw new Error(
         `Unknown Push Configuration type ${kerlinkPushConfiguration.type}`
