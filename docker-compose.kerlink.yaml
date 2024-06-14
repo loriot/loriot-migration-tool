@@ -1,0 +1,11 @@
+version: "3"
+
+services:
+  loriot-migration-tool:
+    container_name: loriot-migration-tool
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./data/:/data/
+    env_file: .env.kerlink

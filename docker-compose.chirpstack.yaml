@@ -1,0 +1,9 @@
+version: "3"
+
+services:
+  loriot-migration-tool:
+    container_name: loriot-migration-tool
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file: .env.chirpstack

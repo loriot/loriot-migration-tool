@@ -7,14 +7,6 @@ import { LoriotNetwork, importNetworks } from './loriot/networks';
 
 (async () => {
   try {
-    console.debug(`environment variables:`);
-    console.debug(`URL: ${process.env.URL}`);
-    console.debug(`AUTH: ${process.env.AUTH}`);
-    console.debug(`CHIRPSTACK_URL: ${process.env.CHIRPSTACK_URL}`);
-    console.debug(`CHIRPSTACK_API_TOKEN: ${process.env.CHIRPSTACK_API_TOKEN}`);
-    console.debug(`CHIRPSTACK_TENANT_ID: ${process.env.CHIRPSTACK_TENANT_ID}`);
-    console.debug(`*************************************`);
-
     var applications: LoriotApplication[] = [];
     var networks: LoriotNetwork[] = [];
     if (
@@ -23,6 +15,8 @@ import { LoriotNetwork, importNetworks } from './loriot/networks';
       process.env.CHIRPSTACK_TENANT_ID
     ) {
       // CHIRPSTACK
+      console.debug(`************* CHIRPSTACK *************`);
+
       applications = await loadChirpstackApplications(
         process.env.CHIRPSTACK_URL,
         process.env.CHIRPSTACK_API_TOKEN,
@@ -37,6 +31,8 @@ import { LoriotNetwork, importNetworks } from './loriot/networks';
       ];
     } else {
       // KERLINK
+      console.debug(`************* KERLINK *************`);
+
       applications = await loadKerlinkClusters();
       networks = await loadKerlinkFleets();
     }
