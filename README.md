@@ -11,8 +11,8 @@ PoC tool to migrate resources to LORIOT NMS
 
 - `.csv` files exported from Kerlink WMC
   - For devices migration:
-    - `./data/clusters.csv`
-    - `./data/pushConfigurations.csv`
+    - `./data/clusters.csv` (optional: if not provied, clusters are taken from `devices.csv`)
+    - `./data/pushConfigurations.csv` (optional)
     - `./data/devices.csv` (extended with `dev_addr`, `AppSKey` and `NwkSKey` columns)
   - For gateways migration:
     - `./data/fleets.csv`
