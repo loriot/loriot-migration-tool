@@ -6,6 +6,9 @@ import { LoriotApplication, importApplications } from './loriot/applications';
 import { LoriotNetwork, importNetworks } from './loriot/networks';
 
 (async () => {
+  console.log(`LORIOT Migration Tool v${require('../package.json').version}`);
+  console.log(``);
+
   try {
     var applications: LoriotApplication[] = [];
     var networks: LoriotNetwork[] = [];

@@ -100,11 +100,11 @@ export interface LoriotMqttKerlinkOutput extends LoriotOutput {
 
 export type LoriotDevice = {
   title: string;
+  description?: string;
   deveui: string;
   devclass: eDeviceClass;
   devVersion: eDeviceVersion;
   devActivation: eDeviceActivation;
-  lorawan: lorawanVersion;
   appkey?: string;
   appeui?: string;
   devaddr?: string;
@@ -118,7 +118,7 @@ export type LoriotDevice = {
   seqq: number;
 };
 
-export type lorawanVersion = { major: number; minor: number; revision: string };
+export type lorawanVersion = { major: number; minor: number; patch: number };
 
 export enum eDeviceClass {
   A = 'A',
@@ -143,28 +143,17 @@ export async function importApplications(applications: LoriotApplication[]) {
    */
   for (const app of applications) {
     try {
-      // Check if application already exists on LORIOT (by Name) to support multiple import attempts
-      var appId = await getApp(app);
-      if (!appId) {
-        // Create application
-        console.debug(`[${app.name}] Creating application ...`);
-        appId = await createApp(app);
-        console.debug(`[${app.name}] Application created!`);
-      } else {
-        console.debug(
-          `[${app.name}] Reusing already existing application ${appId}!`
-        );
-      }
+      // Create application
+      const appId = await createApp(app);
+      console.debug(`[${app.name}] Application created`);
 
       // Create outputs
       for (const out of app.outputs) {
         try {
-          console.debug(
-            `[${app.name}][OUT][${out.osetup.name}] Creating output ...`
-          );
+          // Create output
           await createOutput(appId, out);
           console.debug(
-            `[${app.name}][OUT][${out.osetup.name}] Output created!`
+            `[${app.name}][OUT][${out.osetup.name}] Output created`
           );
         } catch (err: any) {
           console.error(
@@ -172,38 +161,23 @@ export async function importApplications(applications: LoriotApplication[]) {
               out.osetup.name
             }] Output creation error: ${getErrorMessage(err)}`
           );
+          console.debug(out);
         }
       }
 
       // Create devices
       for (const dev of app.devices) {
         try {
-          // Delete device if already exists
-          try {
-            console.debug(
-              `[${app.name}][DEV][${dev.deveui}] Check if already exisiting ...`
-            );
-            await deleteDevice(appId, dev);
-            console.debug(`[${app.name}][DEV][${dev.deveui}] Device deleted!`);
-          } catch (err: any) {
-            console.error(
-              `[${app.name}][DEV][${
-                dev.deveui
-              }] Device deletion error: ${getErrorMessage(err)}`
-            );
-          }
-
-          console.debug(
-            `[${app.name}][DEV][${dev.deveui}] Creating device ...`
-          );
+          // Create device
           await createDevice(appId, dev);
-          console.debug(`[${app.name}][DEV][${dev.deveui}] Device created!`);
+          console.debug(`[${app.name}][DEV][${dev.deveui}] Device created`);
         } catch (err: any) {
           console.error(
             `[${app.name}][DEV][${
               dev.deveui
             }] Device creation error: ${getErrorMessage(err)}`
           );
+          console.debug(dev);
         }
       }
     } catch (err: any) {
@@ -215,20 +189,6 @@ export async function importApplications(applications: LoriotApplication[]) {
 
   console.debug(`Applications migration complete!`);
   console.debug(`*************************************`);
-}
-
-async function getApp(app: LoriotApplication): Promise<string> {
-  return axios
-    .get(`https://${process.env.URL}/1/nwk/apps?filter=name=${app.name}`, {
-      headers: { Authorization: process.env.AUTH },
-    })
-    .then((res: AxiosResponse) => {
-      if (res.data.apps.length > 0) {
-        return res.data.apps[0]._id.toString(16).toUpperCase();
-      } else {
-        return undefined;
-      }
-    });
 }
 
 async function createApp(app: LoriotApplication): Promise<string> {
@@ -258,34 +218,6 @@ async function createOutput(appId: string, out: LoriotOutput): Promise<string> {
       headers: { Authorization: process.env.AUTH },
     }
   );
-}
-
-async function deleteDevice(
-  appId: string,
-  dev: LoriotDevice
-): Promise<boolean> {
-  return axios
-    .delete(
-      `https://${
-        process.env.URL
-      }/1/nwk/app/${appId}/device/${dev.deveui.toUpperCase()}`,
-      {
-        headers: { Authorization: process.env.AUTH },
-      }
-    )
-    .then(
-      async (res: AxiosResponse) => {
-        return true;
-      },
-      (err: Error) => {
-        if ((err as AxiosError).response?.status == 404) {
-          // Device doesn't exist
-          return false;
-        } else {
-          throw err;
-        }
-      }
-    );
 }
 
 async function createDevice(appId: string, dev: LoriotDevice): Promise<string> {

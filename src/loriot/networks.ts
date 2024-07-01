@@ -29,31 +29,23 @@ export async function importNetworks(networks: LoriotNetwork[]) {
    */
   for (const net of networks) {
     try {
-      // Check if network already exists on LORIOT (by Name) to support multiple import attempts
-      var netId = await getNetwork(net);
-      if (!netId) {
-        // Create application
-        console.debug(`[${net.name}] Creating network ...`);
-        netId = await createNet(net);
-        console.debug(`[${net.name}] Network created!`);
-      } else {
-        console.debug(
-          `[${net.name}] Reusing already existing network ${netId}!`
-        );
-      }
+      // Create network
+      const netId = await createNet(net);
+      console.debug(`[${net.name}] Network created`);
 
       // Create gateways
       for (const gw of net.gateways) {
         try {
-          console.debug(`[${net.name}][GW][${gw.MAC}] Creating gateway ...`);
+          // Create gateway
           await createGateway(netId, gw);
-          console.debug(`[${net.name}][GW][${gw.MAC}] Gateway created!`);
+          console.debug(`[${net.name}][GW][${gw.MAC}] Gateway created`);
         } catch (err: any) {
           console.error(
             `[${net.name}][GW][${
               gw.MAC
             }] Gateway creation error: ${getErrorMessage(err)}`
           );
+          console.debug(gw);
         }
       }
     } catch (err: any) {
@@ -65,23 +57,6 @@ export async function importNetworks(networks: LoriotNetwork[]) {
 
   console.debug(`Networks migration complete!`);
   console.debug(`*************************************`);
-}
-
-async function getNetwork(network: LoriotNetwork): Promise<string> {
-  return axios
-    .get(
-      `https://${process.env.URL}/1/nwk/networks?filter=name=${network.name}`,
-      {
-        headers: { Authorization: process.env.AUTH },
-      }
-    )
-    .then((res: AxiosResponse) => {
-      if (res.data.networks.length > 0) {
-        return res.data.networks[0]._id.toString(16).toUpperCase();
-      } else {
-        return undefined;
-      }
-    });
 }
 
 async function createNet(name: LoriotNetwork): Promise<string> {

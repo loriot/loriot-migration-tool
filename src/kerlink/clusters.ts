@@ -12,7 +12,7 @@ import {
   eLoriotKerlinkOutputVerbosity,
   lorawanVersion,
 } from '../loriot/applications';
-import { addLeadingZeros, loadCsvFile } from '../utils';
+import { addLeadingZeros, loadCsvFile, randomHex } from '../utils';
 
 const DEVICES_PATH = './data/devices.csv';
 const CLUSTERS_PATH = './data/clusters.csv';
@@ -104,7 +104,7 @@ export type KerlinkDevice = {
   fcntDown: number;
   fcntUp: number;
   rx1Delay: number;
-  rxWindows: number;
+  rxWindows?: string;
   dev_addr: string;
   NwkSKey: string;
   AppSKey: string;
@@ -221,6 +221,7 @@ export async function loadKerlinkClusters(): Promise<LoriotApplication[]> {
   /**
    * Translate from Kerlink to LORIOT
    */
+  console.debug(`Translating clusters into LORIOT applications ...`);
   const applications: LoriotApplication[] = [];
   for (const kerlinkCluster of clusters) {
     // Prepare LORIOT device
@@ -228,6 +229,10 @@ export async function loadKerlinkClusters(): Promise<LoriotApplication[]> {
     // Add device to application list
     applications.push(app);
   }
+
+  console.debug(`Clusters translation complete!`);
+  console.debug(`*************************************`);
+
   return applications;
 }
 
@@ -250,15 +255,21 @@ function translateKerlinkCluster(
       app.outputs.push(out);
     } catch (err: any) {
       console.log(
-        `Unable to translate push configuration "${kerlinkPushConfiguration.name}": ${err.message}`
+        `Unable to translate push configuration ${kerlinkPushConfiguration.id} "${kerlinkPushConfiguration.name}": ${err.message}`
       );
     }
   }
 
   // Translate devices
   for (const kerlinkDevice of kerlinkCluster.devices) {
-    const dev: LoriotDevice = translateKerlinkDevice(kerlinkDevice);
-    app.devices.push(dev);
+    try {
+      const dev: LoriotDevice = translateKerlinkDevice(kerlinkDevice);
+      app.devices.push(dev);
+    } catch (err: any) {
+      console.log(
+        `Unable to translate device "${kerlinkDevice.devEui}": ${err.message}`
+      );
+    }
   }
 
   return app;
@@ -271,9 +282,7 @@ function translateKerlinkPushConfigurations(
   switch (kerlinkPushConfiguration.type) {
     case eKerlinkPushConfigurationType.HTTP:
       if (!kerlinkPushConfiguration.url) {
-        throw new Error(
-          `Missing 'url' for Push Configuration ${kerlinkPushConfiguration.id}`
-        );
+        throw new Error(`Missing 'url'`);
       }
 
       const http: LoriotHttpKerlinkOutput = {
@@ -298,9 +307,7 @@ function translateKerlinkPushConfigurations(
       return http;
     case eKerlinkPushConfigurationType.WEBSOCKET:
       if (!kerlinkPushConfiguration.url) {
-        throw new Error(
-          `Missing 'url' for Push Configuration ${kerlinkPushConfiguration.id}`
-        );
+        throw new Error(`Missing 'url'`);
       }
 
       const ws: LoriotWebsocketKerlinkOutput = {
@@ -323,9 +330,7 @@ function translateKerlinkPushConfigurations(
       return ws;
     case eKerlinkPushConfigurationType.MQTT:
       if (!kerlinkPushConfiguration.mqttHost) {
-        throw new Error(
-          `Missing 'mqttHost' for Push Configuration ${kerlinkPushConfiguration.id}`
-        );
+        throw new Error(`Missing 'mqttHost'`);
       }
 
       const mqtt: LoriotMqttKerlinkOutput = {
@@ -380,27 +385,76 @@ function translateKerlinkVerbosity(
 }
 
 function translateKerlinkDevice(kerlinkDevice: KerlinkDevice): LoriotDevice {
-  const splittedMacVersion = kerlinkDevice.macVersion.split('.');
-  const lorawan: lorawanVersion = {
-    major: Number(splittedMacVersion[0]),
-    minor: Number(splittedMacVersion[1]),
-    revision: splittedMacVersion[2],
-  };
+  if (!['A', 'C'].includes(kerlinkDevice.classType.toUpperCase())) {
+    throw new Error(`unsupported classType: ${kerlinkDevice.classType}`);
+  }
+
+  // LoRaWAN Version
+  var lorawan: lorawanVersion;
+  try {
+    const splittedMacVersion = kerlinkDevice.macVersion.split('.');
+    lorawan = {
+      major: Number(splittedMacVersion[0]),
+      minor: Number(splittedMacVersion[1]),
+      patch: Number(splittedMacVersion[2]),
+    };
+  } catch (err: any) {
+    throw new Error(
+      `Unable to parse macVersion ${kerlinkDevice.macVersion}: ${err.message}`
+    );
+  }
+
+  // DevAddr
+  var devaddr: string;
+  try {
+    devaddr = addLeadingZeros(kerlinkDevice.dev_addr, 8).toUpperCase();
+  } catch (err: any) {
+    throw new Error(
+      `Unable to parse dev_addr ${kerlinkDevice.dev_addr}: ${err.message}`
+    );
+    // devaddr = randomHex(8);
+  }
+
+  // NwkSKey
+  var nwkskey: string;
+  try {
+    nwkskey = addLeadingZeros(kerlinkDevice.NwkSKey, 32).toUpperCase();
+  } catch (err: any) {
+    throw new Error(
+      `Unable to parse NwkSKey ${kerlinkDevice.NwkSKey}: ${err.message}`
+    );
+    // nwkskey = randomHex(32);
+  }
+
+  // AppSKey
+  var appskey: string;
+  try {
+    appskey = addLeadingZeros(kerlinkDevice.AppSKey, 32).toUpperCase();
+  } catch (err: any) {
+    throw new Error(
+      `Unable to parse AppSKey ${kerlinkDevice.AppSKey}: ${err.message}`
+    );
+    // appskey = randomHex(32);
+  }
 
   const dev: LoriotDevice = {
-    title: kerlinkDevice.name,
+    title: kerlinkDevice.name
+      ? kerlinkDevice.name.toString()
+      : kerlinkDevice.devEui,
     deveui: kerlinkDevice.devEui,
     devclass: kerlinkDevice.classType as eDeviceClass,
     devActivation: kerlinkDevice.activation as eDeviceActivation,
     devVersion: lorawan.minor == 0 ? eDeviceVersion.v10 : eDeviceVersion.v11,
-    lorawan,
-    devaddr: addLeadingZeros(kerlinkDevice.dev_addr, 8).toUpperCase(),
-    nwkskey: addLeadingZeros(kerlinkDevice.NwkSKey, 32).toUpperCase(),
-    appskey: addLeadingZeros(kerlinkDevice.AppSKey, 32).toUpperCase(),
+    devaddr,
+    nwkskey,
+    appskey,
     canSendADR: kerlinkDevice.adrEnabled ?? true,
     rxw:
-      kerlinkDevice.rxWindows ??
-      (kerlinkDevice.classType == eDeviceClass.C ? 2 : 1), // If class C use RXW2 as default
+      kerlinkDevice.rxWindows == 'AUTO'
+        ? 0
+        : kerlinkDevice.classType == eDeviceClass.C
+        ? 2 // If class C use RXW2 as default
+        : 1,
     rx1Delay: kerlinkDevice.rx1Delay ?? 1,
     seqno: kerlinkDevice.fcntUp ?? 0,
     seqdn: kerlinkDevice.fcntDown ? kerlinkDevice.fcntDown + 1 : 0, // LORIOT will use this value for the next downlink, while kerlink fcntDown is the last used. So increment it +1
@@ -408,8 +462,32 @@ function translateKerlinkDevice(kerlinkDevice: KerlinkDevice): LoriotDevice {
   };
 
   if (dev.devActivation == eDeviceActivation.OTAA) {
-    dev.appeui = addLeadingZeros(kerlinkDevice.appEui, 16).toUpperCase();
-    dev.appkey = addLeadingZeros(kerlinkDevice.appKey, 32).toUpperCase();
+    // JoinEUI
+    try {
+      dev.appeui = addLeadingZeros(kerlinkDevice.appEui, 16).toUpperCase();
+    } catch (err: any) {
+      throw new Error(
+        `Unable to parse appEui ${kerlinkDevice.appEui}: ${err.message}`
+      );
+    }
+
+    // AppKey
+    try {
+      dev.appkey = addLeadingZeros(kerlinkDevice.appKey, 32).toUpperCase();
+    } catch (err: any) {
+      throw new Error(
+        `Unable to parse appKey ${kerlinkDevice.appKey}: ${err.message}`
+      );
+      // dev.appkey = randomHex(32);
+    }
+  }
+
+  // Check if title is too long
+  if (dev.title.length >= 50) {
+    // Save it as description but truncate to 50 chars
+    dev.description = dev.title;
+    dev.title = dev.title.substring(0, 50);
+    console.warn(`${dev.deveui} title too long: truncated to ${dev.title}`);
   }
 
   return dev;

@@ -66,6 +66,7 @@ export async function loadKerlinkFleets(): Promise<LoriotNetwork[]> {
   /**
    * Translate from Kerlink to LORIOT
    */
+  console.debug(`Translating fleets into LORIOT networks ...`);
   const networks: LoriotNetwork[] = [];
   for (const kerlinkFleet of fleets) {
     // Prepare LORIOT device
@@ -73,6 +74,9 @@ export async function loadKerlinkFleets(): Promise<LoriotNetwork[]> {
     // Add device to application list
     networks.push(net);
   }
+
+  console.debug(`Fleets translation complete!`);
+  console.debug(`*************************************`);
 
   return networks;
 }
@@ -85,8 +89,14 @@ function translateKerlinkFleet(kerlinkFleet: KerlinkFleet): LoriotNetwork {
 
   // Translate gateways
   for (const kerlinkGateway of kerlinkFleet.gateways) {
-    const gw: LoriotGateway = translateKerlinkGateway(kerlinkGateway);
-    net.gateways.push(gw);
+    try {
+      const gw: LoriotGateway = translateKerlinkGateway(kerlinkGateway);
+      net.gateways.push(gw);
+    } catch (err: any) {
+      console.log(
+        `Unable to translate gateway "${kerlinkGateway.eui}": ${err.message}`
+      );
+    }
   }
 
   return net;
@@ -118,7 +128,7 @@ function translateGatewayModel(kerlinkGateway: KerlinkGateway): {
 } {
   if (kerlinkGateway.brandName == 'KERLINK') {
     // Kerlink iFemtocell (OS V4.x.x incl Evolution)
-    if (/^Wirnet iFemtoCell/.test(kerlinkGateway.description)) {
+    if (/iFemtoCell/.test(kerlinkGateway.description)) {
       return {
         base: 'kerlink',
         bus: 'SPI',
@@ -129,13 +139,24 @@ function translateGatewayModel(kerlinkGateway: KerlinkGateway): {
     }
 
     // Kerlink iStation
-    if (/^Wirnet iStation/.test(kerlinkGateway.description)) {
+    if (/iStation/.test(kerlinkGateway.description)) {
       return {
         base: 'kerlink',
         bus: 'SPI',
         card: '',
         concentrator: 'kerlink_femtocell',
         model: 'istation',
+      };
+    }
+
+    // Kerlink iBTS
+    if (/iBts/.test(kerlinkGateway.description)) {
+      return {
+        base: 'kerlink',
+        bus: 'SPI',
+        card: '',
+        concentrator: 'kerlink_ibts_v2_61',
+        model: 'ibts',
       };
     }
 

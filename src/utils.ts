@@ -68,10 +68,29 @@ export async function loadCsvFile(path: string): Promise<any> {
  * @returns A new string that is equivalent to the input string, but right-aligned and padded on the left with as many zeros as needed to create the target length
  */
 export function addLeadingZeros(hex: string, length: number): string {
-  while (hex.length < length) hex = '0' + hex;
-  return hex;
+  try {
+    while (hex.length < length) hex = '0' + hex;
+    return hex;
+  } catch (err: any) {
+    throw new Error(`Cannot add leading zeros to ${hex}`);
+  }
 }
 
 export async function sleep(ms: number): Promise<void> {
   return new Promise<void>((resolve) => setTimeout(() => resolve(), ms));
+}
+
+export function randomHex(size: number): string {
+  let hex = [...Array(size)]
+    .map(() => Math.floor(Math.random() * 16).toString(16))
+    .join('')
+    .toUpperCase();
+  while (hex.length % 2 != 0) hex = '0' + hex; // Left padding
+  return hex;
+}
+
+export function randomMAC(): string {
+  return `${randomHex(2)}:${randomHex(2)}:${randomHex(2)}:${randomHex(
+    2
+  )}:${randomHex(2)}:${randomHex(2)}`;
 }

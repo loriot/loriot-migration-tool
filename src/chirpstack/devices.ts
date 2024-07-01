@@ -25,38 +25,39 @@ import {
   eDeviceActivation,
   eDeviceClass,
   eDeviceVersion,
+  lorawanVersion,
 } from '../loriot/applications';
 
-const MAC_VERSIONS = [
+const MAC_VERSIONS: lorawanVersion[] = [
   {
     major: 1,
     minor: 0,
-    revision: '0',
+    patch: 0,
   },
   {
     major: 1,
     minor: 0,
-    revision: '1',
+    patch: 1,
   },
   {
     major: 1,
     minor: 0,
-    revision: '2',
+    patch: 2,
   },
   {
     major: 1,
     minor: 0,
-    revision: '3',
+    patch: 3,
   },
   {
     major: 1,
     minor: 0,
-    revision: '4',
+    patch: 4,
   },
   {
     major: 1,
     minor: 1,
-    revision: '1',
+    patch: 1,
   },
 ];
 
@@ -313,14 +314,15 @@ async function translate(
   const lorawan = MAC_VERSIONS[deviceProfile.macVersion];
 
   const dev: LoriotDevice = {
-    title: chirpstackDevice.name,
+    title: chirpstackDevice.name
+      ? chirpstackDevice.name.toString()
+      : chirpstackDevice.devEui?.toUpperCase(),
     deveui: chirpstackDevice.devEui?.toUpperCase(),
     devclass: deviceProfile.supportsClassC ? eDeviceClass.C : eDeviceClass.A,
     devVersion: lorawan.minor == 0 ? eDeviceVersion.v10 : eDeviceVersion.v11,
     devActivation: deviceProfile.supportsOtaa
       ? eDeviceActivation.OTAA
       : eDeviceActivation.ABP,
-    lorawan,
     devaddr: activation?.devAddr?.toUpperCase(),
     appeui: chirpstackDevice.joinEui?.toUpperCase(),
     appkey: keys?.nwkKey, // Network root key (128 bit). Note: For LoRaWAN 1.0.x, use this field for the LoRaWAN 1.0.x 'AppKey`!

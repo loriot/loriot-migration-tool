@@ -44,8 +44,3 @@ PoC tool to migrate resources to LORIOT NMS
 - `CHIRPSTACK_TENANT_ID`: ChirpStack Tenant ID (example: `52f14cd4-c6f1-4fbd-8f87-4025e1d49242`)
 
 2. `docker compose -f docker-compose.chirpstack.yaml build && docker compose -f docker-compose.chirpstack.yaml up`
-
-## Notes
-
-- If a LORIOT application/network already exists with the same name, it will be reused
-- If the device/gateway already exists, it will be deleted and created again (to update its parameters)
