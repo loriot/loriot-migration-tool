@@ -98,7 +98,7 @@ export type KerlinkDevice = {
   classType: string;
   macVersion: string;
   adrEnabled: boolean;
-  activation: string;
+  activation: eDeviceActivation;
   appEui: string;
   appKey: string;
   fcntDown: number;
@@ -405,36 +405,49 @@ function translateKerlinkDevice(kerlinkDevice: KerlinkDevice): LoriotDevice {
   }
 
   // DevAddr
-  var devaddr: string;
-  try {
-    devaddr = addLeadingZeros(kerlinkDevice.dev_addr, 8).toUpperCase();
-  } catch (err: any) {
-    throw new Error(
-      `Unable to parse dev_addr ${kerlinkDevice.dev_addr}: ${err.message}`
-    );
-    // devaddr = randomHex(8);
+  var devaddr: string | undefined;
+  if (kerlinkDevice.dev_addr) {
+    try {
+      devaddr = addLeadingZeros(kerlinkDevice.dev_addr, 8).toUpperCase();
+    } catch (err: any) {
+      throw new Error(
+        `Unable to parse dev_addr ${kerlinkDevice.dev_addr}: ${err.message}`
+      );
+    }
+  } else {
+    // devaddr undefined
+    if (kerlinkDevice.activation == eDeviceActivation.ABP) {
+      throw new Error(`dev_addr is required for ABP device`);
+    }
   }
 
   // NwkSKey
-  var nwkskey: string;
-  try {
-    nwkskey = addLeadingZeros(kerlinkDevice.NwkSKey, 32).toUpperCase();
-  } catch (err: any) {
-    throw new Error(
-      `Unable to parse NwkSKey ${kerlinkDevice.NwkSKey}: ${err.message}`
-    );
-    // nwkskey = randomHex(32);
+  var nwkskey: string | undefined;
+  if (kerlinkDevice.NwkSKey) {
+    try {
+      nwkskey = addLeadingZeros(kerlinkDevice.NwkSKey, 32).toUpperCase();
+    } catch (err: any) {
+      throw new Error(
+        `Unable to parse NwkSKey ${kerlinkDevice.NwkSKey}: ${err.message}`
+      );
+    }
+  } else {
+    // NwkSKey undefined
+    if (kerlinkDevice.activation == eDeviceActivation.ABP) {
+      throw new Error(`NwkSKey is required for ABP device`);
+    }
   }
 
   // AppSKey
-  var appskey: string;
-  try {
-    appskey = addLeadingZeros(kerlinkDevice.AppSKey, 32).toUpperCase();
-  } catch (err: any) {
-    throw new Error(
-      `Unable to parse AppSKey ${kerlinkDevice.AppSKey}: ${err.message}`
-    );
-    // appskey = randomHex(32);
+  var appskey: string | undefined;
+  if (kerlinkDevice.AppSKey) {
+    try {
+      appskey = addLeadingZeros(kerlinkDevice.AppSKey, 32).toUpperCase();
+    } catch (err: any) {
+      throw new Error(
+        `Unable to parse AppSKey ${kerlinkDevice.AppSKey}: ${err.message}`
+      );
+    }
   }
 
   const dev: LoriotDevice = {
@@ -463,22 +476,31 @@ function translateKerlinkDevice(kerlinkDevice: KerlinkDevice): LoriotDevice {
 
   if (dev.devActivation == eDeviceActivation.OTAA) {
     // JoinEUI
-    try {
-      dev.appeui = addLeadingZeros(kerlinkDevice.appEui, 16).toUpperCase();
-    } catch (err: any) {
-      throw new Error(
-        `Unable to parse appEui ${kerlinkDevice.appEui}: ${err.message}`
-      );
+    if (kerlinkDevice.appEui) {
+      try {
+        dev.appeui = addLeadingZeros(kerlinkDevice.appEui, 16).toUpperCase();
+      } catch (err: any) {
+        throw new Error(
+          `Unable to parse appEui ${kerlinkDevice.appEui}: ${err.message}`
+        );
+      }
+    } else {
+      // JoinEUI undefined for OTAA device
+      throw new Error(`appEui is required for OTAA device`);
     }
 
     // AppKey
-    try {
-      dev.appkey = addLeadingZeros(kerlinkDevice.appKey, 32).toUpperCase();
-    } catch (err: any) {
-      throw new Error(
-        `Unable to parse appKey ${kerlinkDevice.appKey}: ${err.message}`
-      );
-      // dev.appkey = randomHex(32);
+    if (kerlinkDevice.appKey) {
+      try {
+        dev.appkey = addLeadingZeros(kerlinkDevice.appKey, 32).toUpperCase();
+      } catch (err: any) {
+        throw new Error(
+          `Unable to parse appKey ${kerlinkDevice.appKey}: ${err.message}`
+        );
+      }
+    } else {
+      // AppKey undefined for OTAA device
+      throw new Error(`appkey is required for OTAA device`);
     }
   }
 
