@@ -1,22 +1,12 @@
 import * as grpc from '@grpc/grpc-js';
 import { ApplicationServiceClient } from '@chirpstack/chirpstack-api/api/application_grpc_pb';
-import {
-  ApplicationListItem,
-  ListApplicationsRequest,
-  ListApplicationsResponse,
-} from '@chirpstack/chirpstack-api/api/application_pb';
+import { ApplicationListItem, ListApplicationsRequest, ListApplicationsResponse } from '@chirpstack/chirpstack-api/api/application_pb';
 import { LoriotApplication, LoriotDevice } from '../loriot/applications';
 import { loadChirpstackDevices } from './devices';
 import { loadIntegrations } from './integrations';
 
-export async function loadChirpstackApplications(
-  url: string,
-  apiToken: string,
-  tenantId: string
-): Promise<LoriotApplication[]> {
-  console.debug(
-    `************* LOAD CHIRSPTACK APPLICATIONS, INTEGRATIONS AND DEVICES *************`
-  );
+export async function loadChirpstackApplications(url: string, apiToken: string, tenantId: string): Promise<LoriotApplication[]> {
+  console.debug(`************* LOAD CHIRSPTACK APPLICATIONS, INTEGRATIONS AND DEVICES *************`);
   console.debug(`Loading applications ...`);
   const loriotApplications: LoriotApplication[] = [];
 
@@ -36,15 +26,8 @@ export async function loadChirpstackApplications(
   return loriotApplications;
 }
 
-async function loadApplications(
-  url: string,
-  apiToken: string,
-  tenantId: string
-): Promise<ApplicationListItem.AsObject[]> {
-  const channel = new ApplicationServiceClient(
-    url,
-    grpc.credentials.createInsecure()
-  );
+async function loadApplications(url: string, apiToken: string, tenantId: string): Promise<ApplicationListItem.AsObject[]> {
+  const channel = new ApplicationServiceClient(url, grpc.credentials.createInsecure());
 
   const LIMIT = 10;
   var OFFSET = 0;
@@ -70,11 +53,7 @@ async function loadApplications(
   return applications;
 }
 
-async function list(
-  channel: ApplicationServiceClient,
-  req: ListApplicationsRequest,
-  apiToken: string
-): Promise<ListApplicationsResponse.AsObject> {
+async function list(channel: ApplicationServiceClient, req: ListApplicationsRequest, apiToken: string): Promise<ListApplicationsResponse.AsObject> {
   return new Promise((resolve, reject) => {
     const metadata = new grpc.Metadata();
     metadata.set('authorization', 'Bearer ' + apiToken);

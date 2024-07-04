@@ -43,42 +43,40 @@ export async function loadKerlinkFleets(): Promise<LoriotNetwork[]> {
    * Fleets
    */
   console.log(`Loading kerlink fleets from ${FLEETS_PATH} ...`);
-  const fleets: KerlinkFleet[] = await loadCsvFile(FLEETS_PATH).then(
-    (data: KerlinkFleetCsv[]) => {
-      if (data.length == 0) {
-        // No fleets.csv file, let's get fleets from gateways
-        for (const gateway of gateways) {
-          const fleet = data.find((fleet) => fleet.id == gateway.fleetId);
-          if (!fleet) {
-            // First time for this cluster, save it
-            data.push({
-              id: gateway.fleetId,
-              name: gateway.fleetName ?? `Fleet ${gateway.fleetId}`,
-            });
-          }
+  const fleets: KerlinkFleet[] = await loadCsvFile(FLEETS_PATH).then((data: KerlinkFleetCsv[]) => {
+    if (data.length == 0) {
+      // No fleets.csv file, let's get fleets from gateways
+      for (const gateway of gateways) {
+        const fleet = data.find((fleet) => fleet.id == gateway.fleetId);
+        if (!fleet) {
+          // First time for this cluster, save it
+          data.push({
+            id: gateway.fleetId,
+            name: gateway.fleetName ?? `Fleet ${gateway.fleetId}`,
+          });
         }
       }
-
-      console.log(`-> Found ${data.length} fleets!`);
-
-      // Cast and validate CSV fields
-      const result: KerlinkFleet[] = [];
-      for (const fleetCsv of data) {
-        // TODO: validate expected fields
-
-        // Recollect gateways already parsed
-        const fleet: KerlinkFleet = {
-          id: fleetCsv.id,
-          name: fleetCsv.name,
-          gateways: gateways.filter((gw) => gw.fleetId == fleetCsv.id),
-        };
-
-        result.push(fleet);
-      }
-
-      return result;
     }
-  );
+
+    console.log(`-> Found ${data.length} fleets!`);
+
+    // Cast and validate CSV fields
+    const result: KerlinkFleet[] = [];
+    for (const fleetCsv of data) {
+      // TODO: validate expected fields
+
+      // Recollect gateways already parsed
+      const fleet: KerlinkFleet = {
+        id: fleetCsv.id,
+        name: fleetCsv.name,
+        gateways: gateways.filter((gw) => gw.fleetId == fleetCsv.id),
+      };
+
+      result.push(fleet);
+    }
+
+    return result;
+  });
 
   /**
    * Translate from Kerlink to LORIOT
@@ -86,9 +84,7 @@ export async function loadKerlinkFleets(): Promise<LoriotNetwork[]> {
   const networks: LoriotNetwork[] = [];
   if (fleets.length > 0) {
     console.debug(``);
-    console.debug(
-      `************* TRANSLATING KERLINK INTO LORIOT GATEWAYS *************`
-    );
+    console.debug(`************* TRANSLATING KERLINK INTO LORIOT GATEWAYS *************`);
     for (const kerlinkFleet of fleets) {
       // Prepare LORIOT device
       const net: LoriotNetwork = translateKerlinkFleet(kerlinkFleet);
@@ -114,18 +110,14 @@ function translateKerlinkFleet(kerlinkFleet: KerlinkFleet): LoriotNetwork {
       const gw: LoriotGateway = translateKerlinkGateway(kerlinkGateway);
       net.gateways.push(gw);
     } catch (err: any) {
-      console.log(
-        `(X) Unable to translate gateway "${kerlinkGateway.eui}": ${err.message}`
-      );
+      console.log(`(X) Unable to translate gateway "${kerlinkGateway.eui}": ${err.message}`);
     }
   }
 
   return net;
 }
 
-function translateKerlinkGateway(
-  kerlinkGateway: KerlinkGateway
-): LoriotGateway {
+function translateKerlinkGateway(kerlinkGateway: KerlinkGateway): LoriotGateway {
   const gw: LoriotGateway = {
     title: kerlinkGateway.name,
     MAC: kerlinkGateway.eth0MAC,
@@ -184,7 +176,5 @@ function translateGatewayModel(kerlinkGateway: KerlinkGateway): {
     // TODO: support more models
   }
 
-  throw new Error(
-    `Unknown model ${kerlinkGateway.brandName} ${kerlinkGateway.description}`
-  );
+  throw new Error(`Unknown model ${kerlinkGateway.brandName} ${kerlinkGateway.description}`);
 }

@@ -2,21 +2,11 @@ import util from 'util';
 import { LoriotGateway, LoriotNetwork } from '../loriot/networks';
 import * as grpc from '@grpc/grpc-js';
 import { GatewayServiceClient } from '@chirpstack/chirpstack-api/api/gateway_grpc_pb';
-import {
-  GatewayListItem,
-  ListGatewaysRequest,
-  ListGatewaysResponse,
-} from '@chirpstack/chirpstack-api/api/gateway_pb';
+import { GatewayListItem, ListGatewaysRequest, ListGatewaysResponse } from '@chirpstack/chirpstack-api/api/gateway_pb';
 import { sleep } from '../utils';
 
-export async function loadChirpstackGateways(
-  url: string,
-  apiToken: string,
-  tenantId: string
-): Promise<LoriotNetwork> {
-  console.debug(
-    `************* LOAD CHIRSPTACK NETWORKS AND GATEWAYS *************`
-  );
+export async function loadChirpstackGateways(url: string, apiToken: string, tenantId: string): Promise<LoriotNetwork> {
+  console.debug(`************* LOAD CHIRSPTACK NETWORKS AND GATEWAYS *************`);
   console.debug(`Loading gateways ...`);
 
   // Gateways not organized in networks on Chirpstack
@@ -36,15 +26,8 @@ export async function loadChirpstackGateways(
   return network;
 }
 
-async function loadGateways(
-  url: string,
-  apiToken: string,
-  tenantId: string
-): Promise<GatewayListItem.AsObject[]> {
-  const channel = new GatewayServiceClient(
-    url,
-    grpc.credentials.createInsecure()
-  );
+async function loadGateways(url: string, apiToken: string, tenantId: string): Promise<GatewayListItem.AsObject[]> {
+  const channel = new GatewayServiceClient(url, grpc.credentials.createInsecure());
 
   const LIMIT = 10;
   var OFFSET = 0;
@@ -70,11 +53,7 @@ async function loadGateways(
   return gateways;
 }
 
-async function list(
-  channel: GatewayServiceClient,
-  req: ListGatewaysRequest,
-  apiToken: string
-): Promise<ListGatewaysResponse.AsObject> {
+async function list(channel: GatewayServiceClient, req: ListGatewaysRequest, apiToken: string): Promise<ListGatewaysResponse.AsObject> {
   return new Promise((resolve, reject) => {
     const metadata = new grpc.Metadata();
     metadata.set('authorization', 'Bearer ' + apiToken);
@@ -91,9 +70,7 @@ async function list(
   });
 }
 
-async function translate(
-  chirspstackGateway: GatewayListItem.AsObject
-): Promise<LoriotGateway> {
+async function translate(chirspstackGateway: GatewayListItem.AsObject): Promise<LoriotGateway> {
   const gw: LoriotGateway = {
     title: chirspstackGateway.name,
     notes: chirspstackGateway.description,

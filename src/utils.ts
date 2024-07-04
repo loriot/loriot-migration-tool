@@ -24,14 +24,7 @@ export function getErrorMessage(error: Error): string {
 /**
  * Load CSV file and try to cast undefined, boolean and number fields
  */
-const hexFields = [
-  'dev_addr',
-  'devEui',
-  'NwkSKey',
-  'AppSKey',
-  'appEui',
-  'appKey',
-];
+const hexFields = ['dev_addr', 'devEui', 'NwkSKey', 'AppSKey', 'appEui', 'appKey'];
 export async function loadCsvFile(path: string): Promise<any> {
   if (!fs.existsSync(path)) {
     console.warn(`File ${path} not found`);
@@ -43,12 +36,10 @@ export async function loadCsvFile(path: string): Promise<any> {
     for (const row of data) {
       for (const field in row) {
         // Undefined
-        if (row[field].toLowerCase() == 'null' || row[field] == '')
-          delete (row as any)[field];
+        if (row[field].toLowerCase() == 'null' || row[field] == '') delete (row as any)[field];
         // Boolean
         else if (row[field].toLowerCase() == 'true') row[field] = true;
-        else if (row[field].toLowerCase() == 'false')
-          (row as any)[field] = false;
+        else if (row[field].toLowerCase() == 'false') (row as any)[field] = false;
         // if hex do not try to convert as number
         else if (hexFields.includes(field)) {
         }
@@ -90,7 +81,5 @@ export function randomHex(size: number): string {
 }
 
 export function randomMAC(): string {
-  return `${randomHex(2)}:${randomHex(2)}:${randomHex(2)}:${randomHex(
-    2
-  )}:${randomHex(2)}:${randomHex(2)}`;
+  return `${randomHex(2)}:${randomHex(2)}:${randomHex(2)}:${randomHex(2)}:${randomHex(2)}:${randomHex(2)}`;
 }

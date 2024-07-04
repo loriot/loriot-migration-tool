@@ -15,18 +15,8 @@ import {
   Device,
   DeviceKeys,
 } from '@chirpstack/chirpstack-api/api/device_pb';
-import {
-  GetDeviceProfileRequest,
-  GetDeviceProfileResponse,
-  DeviceProfile,
-} from '@chirpstack/chirpstack-api/api/device_profile_pb';
-import {
-  LoriotDevice,
-  eDeviceActivation,
-  eDeviceClass,
-  eDeviceVersion,
-  lorawanVersion,
-} from '../loriot/applications';
+import { GetDeviceProfileRequest, GetDeviceProfileResponse, DeviceProfile } from '@chirpstack/chirpstack-api/api/device_profile_pb';
+import { LoriotDevice, eDeviceActivation, eDeviceClass, eDeviceVersion, lorawanVersion } from '../loriot/applications';
 
 const MAC_VERSIONS: lorawanVersion[] = [
   {
@@ -61,67 +51,37 @@ const MAC_VERSIONS: lorawanVersion[] = [
   },
 ];
 
-export async function loadChirpstackDevices(
-  url: string,
-  apiToken: string,
-  applicationId: string
-): Promise<LoriotDevice[]> {
+export async function loadChirpstackDevices(url: string, apiToken: string, applicationId: string): Promise<LoriotDevice[]> {
   console.debug(`Loading devices ...`);
   const loriotDevices: LoriotDevice[] = [];
 
   // Prepare gRPC services
-  const deviceServiceChannel = new DeviceServiceClient(
-    url,
-    grpc.credentials.createInsecure()
-  );
-  const deviceProfileServiceClient = new DeviceProfileServiceClient(
-    url,
-    grpc.credentials.createInsecure()
-  );
+  const deviceServiceChannel = new DeviceServiceClient(url, grpc.credentials.createInsecure());
+  const deviceProfileServiceClient = new DeviceProfileServiceClient(url, grpc.credentials.createInsecure());
 
   // Load devices list
-  const devices = await loadDevices(
-    deviceServiceChannel,
-    apiToken,
-    applicationId
-  );
+  const devices = await loadDevices(deviceServiceChannel, apiToken, applicationId);
 
   const deviceProfiles: Map<string, DeviceProfile.AsObject> = new Map();
   for (const deviceListItem of devices) {
     // Get device object (some params are missing on deviceListItem, e.g. JoinEUI)
-    const device: Device.AsObject = await getDevice(
-      deviceServiceChannel,
-      apiToken,
-      deviceListItem.devEui
-    );
+    const device: Device.AsObject = await getDevice(deviceServiceChannel, apiToken, deviceListItem.devEui);
 
     // Get activation params (devaddr, appskey, nwkskey, ...)
-    const activation = await getActivation(
-      deviceServiceChannel,
-      apiToken,
-      device.devEui
-    );
+    const activation = await getActivation(deviceServiceChannel, apiToken, device.devEui);
 
     // Get keys (appkey)
     const keys = await getKeys(deviceServiceChannel, apiToken, device.devEui);
 
     // Get device profile
-    var deviceProfile: DeviceProfile.AsObject | undefined = deviceProfiles.get(
-      device.deviceProfileId
-    );
+    var deviceProfile: DeviceProfile.AsObject | undefined = deviceProfiles.get(device.deviceProfileId);
     if (!deviceProfile) {
-      deviceProfile = await getDeviceProfile(
-        deviceProfileServiceClient,
-        apiToken,
-        device.deviceProfileId
-      );
+      deviceProfile = await getDeviceProfile(deviceProfileServiceClient, apiToken, device.deviceProfileId);
       deviceProfiles.set(device.deviceProfileId, deviceProfile);
     }
 
     // Push device
-    loriotDevices.push(
-      await translate(device, activation, keys, deviceProfile)
-    );
+    loriotDevices.push(await translate(device, activation, keys, deviceProfile));
   }
 
   console.debug(`Devices loading complete!`);
@@ -129,11 +89,7 @@ export async function loadChirpstackDevices(
   return loriotDevices;
 }
 
-async function loadDevices(
-  channel: DeviceServiceClient,
-  apiToken: string,
-  applicationId: string
-): Promise<DeviceListItem.AsObject[]> {
+async function loadDevices(channel: DeviceServiceClient, apiToken: string, applicationId: string): Promise<DeviceListItem.AsObject[]> {
   const LIMIT = 10;
   var OFFSET = 0;
   const req = new ListDevicesRequest();
@@ -158,11 +114,7 @@ async function loadDevices(
   return devices;
 }
 
-async function list(
-  channel: DeviceServiceClient,
-  req: ListDevicesRequest,
-  apiToken: string
-): Promise<ListDevicesResponse.AsObject> {
+async function list(channel: DeviceServiceClient, req: ListDevicesRequest, apiToken: string): Promise<ListDevicesResponse.AsObject> {
   return new Promise((resolve, reject) => {
     const metadata = new grpc.Metadata();
     metadata.set('authorization', 'Bearer ' + apiToken);
@@ -179,11 +131,7 @@ async function list(
   });
 }
 
-async function getDevice(
-  channel: DeviceServiceClient,
-  apiToken: string,
-  deveui: string
-): Promise<Device.AsObject> {
+async function getDevice(channel: DeviceServiceClient, apiToken: string, deveui: string): Promise<Device.AsObject> {
   return new Promise((resolve, reject) => {
     const metadata = new grpc.Metadata();
     metadata.set('authorization', 'Bearer ' + apiToken);
@@ -208,11 +156,7 @@ async function getDevice(
   });
 }
 
-async function getActivation(
-  channel: DeviceServiceClient,
-  apiToken: string,
-  deveui: string
-): Promise<DeviceActivation.AsObject | undefined> {
+async function getActivation(channel: DeviceServiceClient, apiToken: string, deveui: string): Promise<DeviceActivation.AsObject | undefined> {
   return new Promise((resolve, reject) => {
     const metadata = new grpc.Metadata();
     metadata.set('authorization', 'Bearer ' + apiToken);
@@ -220,33 +164,25 @@ async function getActivation(
     const req: GetDeviceActivationRequest = new GetDeviceActivationRequest();
     req.setDevEui(deveui);
 
-    channel.getActivation(
-      req,
-      metadata,
-      (err, resp?: GetDeviceActivationResponse) => {
-        if (err) {
-          reject(err);
-        } else if (!resp) {
-          reject(new Error(`grpc response undefined`));
+    channel.getActivation(req, metadata, (err, resp?: GetDeviceActivationResponse) => {
+      if (err) {
+        reject(err);
+      } else if (!resp) {
+        reject(new Error(`grpc response undefined`));
+      } else {
+        const deviceActivation = resp.getDeviceActivation();
+        if (deviceActivation) {
+          resolve(deviceActivation.toObject());
         } else {
-          const deviceActivation = resp.getDeviceActivation();
-          if (deviceActivation) {
-            resolve(deviceActivation.toObject());
-          } else {
-            // OTAA still not activated
-            resolve(undefined);
-          }
+          // OTAA still not activated
+          resolve(undefined);
         }
       }
-    );
+    });
   });
 }
 
-async function getKeys(
-  channel: DeviceServiceClient,
-  apiToken: string,
-  deveui: string
-): Promise<DeviceKeys.AsObject | undefined> {
+async function getKeys(channel: DeviceServiceClient, apiToken: string, deveui: string): Promise<DeviceKeys.AsObject | undefined> {
   return new Promise((resolve, reject) => {
     const metadata = new grpc.Metadata();
     metadata.set('authorization', 'Bearer ' + apiToken);
@@ -276,11 +212,7 @@ async function getKeys(
   });
 }
 
-async function getDeviceProfile(
-  channel: DeviceProfileServiceClient,
-  apiToken: string,
-  id: string
-): Promise<DeviceProfile.AsObject> {
+async function getDeviceProfile(channel: DeviceProfileServiceClient, apiToken: string, id: string): Promise<DeviceProfile.AsObject> {
   return new Promise((resolve, reject) => {
     const metadata = new grpc.Metadata();
     metadata.set('authorization', 'Bearer ' + apiToken);
@@ -314,15 +246,11 @@ async function translate(
   const lorawan = MAC_VERSIONS[deviceProfile.macVersion];
 
   const dev: LoriotDevice = {
-    title: chirpstackDevice.name
-      ? chirpstackDevice.name.toString()
-      : chirpstackDevice.devEui?.toUpperCase(),
+    title: chirpstackDevice.name ? chirpstackDevice.name.toString() : chirpstackDevice.devEui?.toUpperCase(),
     deveui: chirpstackDevice.devEui?.toUpperCase(),
     devclass: deviceProfile.supportsClassC ? eDeviceClass.C : eDeviceClass.A,
     devVersion: lorawan.minor == 0 ? eDeviceVersion.v10 : eDeviceVersion.v11,
-    devActivation: deviceProfile.supportsOtaa
-      ? eDeviceActivation.OTAA
-      : eDeviceActivation.ABP,
+    devActivation: deviceProfile.supportsOtaa ? eDeviceActivation.OTAA : eDeviceActivation.ABP,
     devaddr: activation?.devAddr?.toUpperCase(),
     appeui: chirpstackDevice.joinEui?.toUpperCase(),
     appkey: keys?.nwkKey, // Network root key (128 bit). Note: For LoRaWAN 1.0.x, use this field for the LoRaWAN 1.0.x 'AppKey`!

@@ -1,21 +1,10 @@
 import { ApplicationServiceClient } from '@chirpstack/chirpstack-api/api/application_grpc_pb';
-import {
-  GetHttpIntegrationRequest,
-  GetHttpIntegrationResponse,
-  HttpIntegration,
-} from '@chirpstack/chirpstack-api/api/application_pb';
+import { GetHttpIntegrationRequest, GetHttpIntegrationResponse, HttpIntegration } from '@chirpstack/chirpstack-api/api/application_pb';
 import * as grpc from '@grpc/grpc-js';
 import { LoriotOutput } from '../loriot/applications';
 
-export async function loadIntegrations(
-  url: string,
-  apiToken: string,
-  appId: string
-): Promise<LoriotOutput[]> {
-  const channel = new ApplicationServiceClient(
-    url,
-    grpc.credentials.createInsecure()
-  );
+export async function loadIntegrations(url: string, apiToken: string, appId: string): Promise<LoriotOutput[]> {
+  const channel = new ApplicationServiceClient(url, grpc.credentials.createInsecure());
 
   const res: LoriotOutput[] = [];
 
@@ -30,11 +19,7 @@ export async function loadIntegrations(
   return res;
 }
 
-async function getHttpIntegration(
-  channel: ApplicationServiceClient,
-  apiToken: string,
-  appId: string
-): Promise<HttpIntegration.AsObject | undefined> {
+async function getHttpIntegration(channel: ApplicationServiceClient, apiToken: string, appId: string): Promise<HttpIntegration.AsObject | undefined> {
   return new Promise((resolve, reject) => {
     const metadata = new grpc.Metadata();
     metadata.set('authorization', 'Bearer ' + apiToken);
@@ -42,30 +27,24 @@ async function getHttpIntegration(
     const req: GetHttpIntegrationRequest = new GetHttpIntegrationRequest();
     req.setApplicationId(appId);
 
-    channel.getHttpIntegration(
-      req,
-      metadata,
-      (err, resp?: GetHttpIntegrationResponse) => {
-        if (err) {
-          reject(err);
-        } else if (!resp) {
-          reject(new Error(`grpc response undefined`));
+    channel.getHttpIntegration(req, metadata, (err, resp?: GetHttpIntegrationResponse) => {
+      if (err) {
+        reject(err);
+      } else if (!resp) {
+        reject(new Error(`grpc response undefined`));
+      } else {
+        const integration = resp.getIntegration();
+        if (integration) {
+          resolve(integration.toObject());
         } else {
-          const integration = resp.getIntegration();
-          if (integration) {
-            resolve(integration.toObject());
-          } else {
-            resolve(undefined);
-          }
+          resolve(undefined);
         }
       }
-    );
+    });
   });
 }
 
-function translateHttpIntegration(
-  httpIntegration: HttpIntegration.AsObject
-): LoriotOutput {
+function translateHttpIntegration(httpIntegration: HttpIntegration.AsObject): LoriotOutput {
   return {
     output: 'httppush',
     osetup: {

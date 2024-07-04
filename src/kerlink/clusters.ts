@@ -137,9 +137,7 @@ export type KerlinkDevice = {
 };
 
 export async function loadKerlinkClusters(): Promise<LoriotApplication[]> {
-  console.debug(
-    `************* LOAD KERLINK CLUSTERS, PUSH CONFIGURATIONS AND DEVICES *************`
-  );
+  console.debug(`************* LOAD KERLINK CLUSTERS, PUSH CONFIGURATIONS AND DEVICES *************`);
 
   /**
    * Devices
@@ -152,70 +150,56 @@ export async function loadKerlinkClusters(): Promise<LoriotApplication[]> {
   /**
    * Push Configurations
    */
-  console.log(
-    `Loading kerlink push configurations from ${PUSHCONFIGURATIONS_PATH} ...`
-  );
-  const pushConfigurations: KerlinkPushConfiguration[] = await loadCsvFile(
-    PUSHCONFIGURATIONS_PATH
-  );
+  console.log(`Loading kerlink push configurations from ${PUSHCONFIGURATIONS_PATH} ...`);
+  const pushConfigurations: KerlinkPushConfiguration[] = await loadCsvFile(PUSHCONFIGURATIONS_PATH);
   console.log(`-> Found ${pushConfigurations.length} push configurations!`);
   // TODO: validate expected fields
 
   /**
    * Clusters
    */
-  console.log(
-    `Loading kerlink push configurations from ${PUSHCONFIGURATIONS_PATH} ...`
-  );
-  const clusters: KerlinkCluster[] = await loadCsvFile(CLUSTERS_PATH).then(
-    (data: KerlinkClusterCsv[]) => {
-      if (data.length == 0) {
-        // No clusters.csv file, let's get clusters from devices
-        for (const device of devices) {
-          const cluster = data.find(
-            (cluster) => cluster.id == device.clusterId
-          );
-          if (!cluster) {
-            // First time for this cluster, save it
-            data.push({
-              id: device.clusterId,
-              name: device.clusterName ?? `Cluster ${device.clusterId}`,
-              hexa: true,
-              pushEnabled: false,
-            });
-          }
+  console.log(`Loading kerlink push configurations from ${PUSHCONFIGURATIONS_PATH} ...`);
+  const clusters: KerlinkCluster[] = await loadCsvFile(CLUSTERS_PATH).then((data: KerlinkClusterCsv[]) => {
+    if (data.length == 0) {
+      // No clusters.csv file, let's get clusters from devices
+      for (const device of devices) {
+        const cluster = data.find((cluster) => cluster.id == device.clusterId);
+        if (!cluster) {
+          // First time for this cluster, save it
+          data.push({
+            id: device.clusterId,
+            name: device.clusterName ?? `Cluster ${device.clusterId}`,
+            hexa: true,
+            pushEnabled: false,
+          });
         }
       }
-
-      console.log(`-> Found ${data.length} clusters!`);
-
-      const result: KerlinkCluster[] = [];
-      for (const clusterCsv of data) {
-        // TODO: validate expected fields
-
-        if (clusterCsv.pushConfiguration) {
-          clusterCsv.pushConfiguration = JSON.parse(
-            (clusterCsv as any).pushConfiguration
-          );
-        }
-
-        // Recollect devices and push configurations already parsed
-        const cluster: KerlinkCluster = {
-          id: clusterCsv.id,
-          name: clusterCsv.name,
-          hexa: clusterCsv.hexa,
-          devices: devices.filter((dev) => dev.clusterId == clusterCsv.id),
-          pushConfigurations: pushConfigurations.filter(
-            (pc) => pc.id == clusterCsv.pushConfiguration?.id
-          ),
-        };
-
-        result.push(cluster);
-      }
-
-      return result;
     }
-  );
+
+    console.log(`-> Found ${data.length} clusters!`);
+
+    const result: KerlinkCluster[] = [];
+    for (const clusterCsv of data) {
+      // TODO: validate expected fields
+
+      if (clusterCsv.pushConfiguration) {
+        clusterCsv.pushConfiguration = JSON.parse((clusterCsv as any).pushConfiguration);
+      }
+
+      // Recollect devices and push configurations already parsed
+      const cluster: KerlinkCluster = {
+        id: clusterCsv.id,
+        name: clusterCsv.name,
+        hexa: clusterCsv.hexa,
+        devices: devices.filter((dev) => dev.clusterId == clusterCsv.id),
+        pushConfigurations: pushConfigurations.filter((pc) => pc.id == clusterCsv.pushConfiguration?.id),
+      };
+
+      result.push(cluster);
+    }
+
+    return result;
+  });
 
   /**
    * Translate from Kerlink to LORIOT
@@ -223,9 +207,7 @@ export async function loadKerlinkClusters(): Promise<LoriotApplication[]> {
   const applications: LoriotApplication[] = [];
   if (clusters.length > 0) {
     console.debug(``);
-    console.debug(
-      `************* TRANSLATING KERLINK INTO LORIOT DEVICES *************`
-    );
+    console.debug(`************* TRANSLATING KERLINK INTO LORIOT DEVICES *************`);
     for (const kerlinkCluster of clusters) {
       // Prepare LORIOT device
       const app: LoriotApplication = translateKerlinkCluster(kerlinkCluster);
@@ -239,9 +221,7 @@ export async function loadKerlinkClusters(): Promise<LoriotApplication[]> {
   return applications;
 }
 
-function translateKerlinkCluster(
-  kerlinkCluster: KerlinkCluster
-): LoriotApplication {
+function translateKerlinkCluster(kerlinkCluster: KerlinkCluster): LoriotApplication {
   const app: LoriotApplication = {
     name: kerlinkCluster.name,
     outputs: [],
@@ -251,15 +231,10 @@ function translateKerlinkCluster(
   // Translate outputs
   for (const kerlinkPushConfiguration of kerlinkCluster.pushConfigurations) {
     try {
-      const out: LoriotOutput = translateKerlinkPushConfigurations(
-        kerlinkPushConfiguration,
-        kerlinkCluster.hexa
-      );
+      const out: LoriotOutput = translateKerlinkPushConfigurations(kerlinkPushConfiguration, kerlinkCluster.hexa);
       app.outputs.push(out);
     } catch (err: any) {
-      console.log(
-        `(X) Unable to translate push configuration ${kerlinkPushConfiguration.id} "${kerlinkPushConfiguration.name}": ${err.message}`
-      );
+      console.log(`(X) Unable to translate push configuration ${kerlinkPushConfiguration.id} "${kerlinkPushConfiguration.name}": ${err.message}`);
     }
   }
 
@@ -269,19 +244,14 @@ function translateKerlinkCluster(
       const dev: LoriotDevice = translateKerlinkDevice(kerlinkDevice);
       app.devices.push(dev);
     } catch (err: any) {
-      console.log(
-        `(X) Unable to translate device "${kerlinkDevice.devEui}": ${err.message}`
-      );
+      console.log(`(X) Unable to translate device "${kerlinkDevice.devEui}": ${err.message}`);
     }
   }
 
   return app;
 }
 
-function translateKerlinkPushConfigurations(
-  kerlinkPushConfiguration: KerlinkPushConfiguration,
-  hexa: boolean
-): LoriotOutput {
+function translateKerlinkPushConfigurations(kerlinkPushConfiguration: KerlinkPushConfiguration, hexa: boolean): LoriotOutput {
   switch (kerlinkPushConfiguration.type) {
     case eKerlinkPushConfigurationType.HTTP:
       if (!kerlinkPushConfiguration.url) {
@@ -292,12 +262,8 @@ function translateKerlinkPushConfigurations(
         output: 'kerlink_http',
         osetup: {
           name: kerlinkPushConfiguration.name,
-          verbosity: translateKerlinkVerbosity(
-            kerlinkPushConfiguration.msgDetailLevel
-          ),
-          encoding: hexa
-            ? eLoriotKerlinkOutputEncoding.HEXA
-            : eLoriotKerlinkOutputEncoding.BASE64,
+          verbosity: translateKerlinkVerbosity(kerlinkPushConfiguration.msgDetailLevel),
+          encoding: hexa ? eLoriotKerlinkOutputEncoding.HEXA : eLoriotKerlinkOutputEncoding.BASE64,
           url: kerlinkPushConfiguration.url,
           user: kerlinkPushConfiguration.user,
           password: kerlinkPushConfiguration.password,
@@ -317,12 +283,8 @@ function translateKerlinkPushConfigurations(
         output: 'kerlink_websocket',
         osetup: {
           name: kerlinkPushConfiguration.name,
-          verbosity: translateKerlinkVerbosity(
-            kerlinkPushConfiguration.msgDetailLevel
-          ),
-          encoding: hexa
-            ? eLoriotKerlinkOutputEncoding.HEXA
-            : eLoriotKerlinkOutputEncoding.BASE64,
+          verbosity: translateKerlinkVerbosity(kerlinkPushConfiguration.msgDetailLevel),
+          encoding: hexa ? eLoriotKerlinkOutputEncoding.HEXA : eLoriotKerlinkOutputEncoding.BASE64,
           url: kerlinkPushConfiguration.url,
           user: kerlinkPushConfiguration.user,
           password: kerlinkPushConfiguration.password,
@@ -340,12 +302,8 @@ function translateKerlinkPushConfigurations(
         output: 'kerlink_mqtt',
         osetup: {
           name: kerlinkPushConfiguration.name,
-          verbosity: translateKerlinkVerbosity(
-            kerlinkPushConfiguration.msgDetailLevel
-          ),
-          encoding: hexa
-            ? eLoriotKerlinkOutputEncoding.HEXA
-            : eLoriotKerlinkOutputEncoding.BASE64,
+          verbosity: translateKerlinkVerbosity(kerlinkPushConfiguration.msgDetailLevel),
+          encoding: hexa ? eLoriotKerlinkOutputEncoding.HEXA : eLoriotKerlinkOutputEncoding.BASE64,
           host: kerlinkPushConfiguration.mqttHost,
           port: kerlinkPushConfiguration.mqttPort ?? 1883,
           clientid: kerlinkPushConfiguration.mqttClientId,
@@ -366,15 +324,11 @@ function translateKerlinkPushConfigurations(
 
       return mqtt;
     default:
-      throw new Error(
-        `Unknown Push Configuration type ${kerlinkPushConfiguration.type}`
-      );
+      throw new Error(`Unknown Push Configuration type ${kerlinkPushConfiguration.type}`);
   }
 }
 
-function translateKerlinkVerbosity(
-  msgDetailLevel: eKerlinkPushConfigurationMsgDetailLevel
-): eLoriotKerlinkOutputVerbosity {
+function translateKerlinkVerbosity(msgDetailLevel: eKerlinkPushConfigurationMsgDetailLevel): eLoriotKerlinkOutputVerbosity {
   switch (msgDetailLevel) {
     case eKerlinkPushConfigurationMsgDetailLevel.RADIO:
       return eLoriotKerlinkOutputVerbosity.RADIO;
@@ -402,9 +356,7 @@ function translateKerlinkDevice(kerlinkDevice: KerlinkDevice): LoriotDevice {
       patch: Number(splittedMacVersion[2]),
     };
   } catch (err: any) {
-    throw new Error(
-      `(X) Unable to parse macVersion ${kerlinkDevice.macVersion}: ${err.message}`
-    );
+    throw new Error(`(X) Unable to parse macVersion ${kerlinkDevice.macVersion}: ${err.message}`);
   }
 
   // DevAddr
@@ -413,9 +365,7 @@ function translateKerlinkDevice(kerlinkDevice: KerlinkDevice): LoriotDevice {
     try {
       devaddr = addLeadingZeros(kerlinkDevice.dev_addr, 8).toUpperCase();
     } catch (err: any) {
-      throw new Error(
-        `Unable to parse dev_addr ${kerlinkDevice.dev_addr}: ${err.message}`
-      );
+      throw new Error(`Unable to parse dev_addr ${kerlinkDevice.dev_addr}: ${err.message}`);
     }
   } else {
     // devaddr undefined
@@ -430,9 +380,7 @@ function translateKerlinkDevice(kerlinkDevice: KerlinkDevice): LoriotDevice {
     try {
       nwkskey = addLeadingZeros(kerlinkDevice.NwkSKey, 32).toUpperCase();
     } catch (err: any) {
-      throw new Error(
-        `Unable to parse NwkSKey ${kerlinkDevice.NwkSKey}: ${err.message}`
-      );
+      throw new Error(`Unable to parse NwkSKey ${kerlinkDevice.NwkSKey}: ${err.message}`);
     }
   } else {
     // NwkSKey undefined
@@ -447,16 +395,12 @@ function translateKerlinkDevice(kerlinkDevice: KerlinkDevice): LoriotDevice {
     try {
       appskey = addLeadingZeros(kerlinkDevice.AppSKey, 32).toUpperCase();
     } catch (err: any) {
-      throw new Error(
-        `Unable to parse AppSKey ${kerlinkDevice.AppSKey}: ${err.message}`
-      );
+      throw new Error(`Unable to parse AppSKey ${kerlinkDevice.AppSKey}: ${err.message}`);
     }
   }
 
   const dev: LoriotDevice = {
-    title: kerlinkDevice.name
-      ? kerlinkDevice.name.toString()
-      : kerlinkDevice.devEui,
+    title: kerlinkDevice.name ? kerlinkDevice.name.toString() : kerlinkDevice.devEui,
     deveui: kerlinkDevice.devEui,
     devclass: kerlinkDevice.classType as eDeviceClass,
     devActivation: kerlinkDevice.activation as eDeviceActivation,
@@ -483,9 +427,7 @@ function translateKerlinkDevice(kerlinkDevice: KerlinkDevice): LoriotDevice {
       try {
         dev.appeui = addLeadingZeros(kerlinkDevice.appEui, 16).toUpperCase();
       } catch (err: any) {
-        throw new Error(
-          `Unable to parse appEui ${kerlinkDevice.appEui}: ${err.message}`
-        );
+        throw new Error(`Unable to parse appEui ${kerlinkDevice.appEui}: ${err.message}`);
       }
     } else {
       // JoinEUI undefined for OTAA device
@@ -497,9 +439,7 @@ function translateKerlinkDevice(kerlinkDevice: KerlinkDevice): LoriotDevice {
       try {
         dev.appkey = addLeadingZeros(kerlinkDevice.appKey, 32).toUpperCase();
       } catch (err: any) {
-        throw new Error(
-          `Unable to parse appKey ${kerlinkDevice.appKey}: ${err.message}`
-        );
+        throw new Error(`Unable to parse appKey ${kerlinkDevice.appKey}: ${err.message}`);
       }
     } else {
       // AppKey undefined for OTAA device

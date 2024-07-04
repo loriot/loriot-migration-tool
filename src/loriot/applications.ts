@@ -1,5 +1,6 @@
 import axios, { AxiosError, AxiosResponse } from 'axios';
 import { getErrorMessage } from '../utils';
+import { getPaginatedResponse } from './utils';
 
 export type LoriotApplication = {
   name: string;
@@ -136,9 +137,7 @@ export enum eDeviceActivation {
 }
 
 export async function importApplications(applications: LoriotApplication[]) {
-  console.debug(
-    `************* IMPORT APPLICATIONS, OUTPUTS AND DEVICES TO LORIOT *************`
-  );
+  console.debug(`************* IMPORT APPLICATIONS, OUTPUTS AND DEVICES TO LORIOT *************`);
 
   /**
    * Call LORIOT API to create recourses
@@ -154,15 +153,9 @@ export async function importApplications(applications: LoriotApplication[]) {
         try {
           // Create output
           await createOutput(appId, out);
-          console.debug(
-            `[${app.name}][OUT][${out.osetup.name}] Output created`
-          );
+          console.debug(`[${app.name}][OUT][${out.osetup.name}] Output created`);
         } catch (err: any) {
-          console.error(
-            `[${app.name}][OUT][${
-              out.osetup.name
-            }] Output creation error: ${getErrorMessage(err)}`
-          );
+          console.error(`[${app.name}][OUT][${out.osetup.name}] Output creation error: ${getErrorMessage(err)}`);
         }
       }
 
@@ -173,17 +166,11 @@ export async function importApplications(applications: LoriotApplication[]) {
           await createDevice(appId, dev);
           console.debug(`[${app.name}][DEV][${dev.deveui}] Device created`);
         } catch (err: any) {
-          console.error(
-            `[${app.name}][DEV][${
-              dev.deveui
-            }] Device creation error: ${getErrorMessage(err)}`
-          );
+          console.error(`[${app.name}][DEV][${dev.deveui}] Device creation error: ${getErrorMessage(err)}`);
         }
       }
     } catch (err: any) {
-      console.error(
-        `[${app.name}] Application creation error: ${getErrorMessage(err)}`
-      );
+      console.error(`[${app.name}] Application creation error: ${getErrorMessage(err)}`);
     }
   }
 
@@ -210,25 +197,85 @@ async function createApp(app: LoriotApplication): Promise<string> {
 }
 
 async function createOutput(appId: string, out: LoriotOutput): Promise<string> {
-  return axios.post(
-    `https://${process.env.URL}/1/nwk/app/${appId}/outputs`,
-    out,
-    {
-      headers: { Authorization: process.env.AUTH },
-    }
-  );
+  return axios.post(`https://${process.env.URL}/1/nwk/app/${appId}/outputs`, out, {
+    headers: { Authorization: process.env.AUTH },
+  });
 }
 
 async function createDevice(appId: string, dev: LoriotDevice): Promise<string> {
   return axios
-    .post(
-      `https://${process.env.URL}/1/nwk/app/${appId}/devices/${dev.devActivation}`,
-      dev,
-      {
-        headers: { Authorization: process.env.AUTH },
-      }
-    )
+    .post(`https://${process.env.URL}/1/nwk/app/${appId}/devices/${dev.devActivation}`, dev, {
+      headers: { Authorization: process.env.AUTH },
+    })
     .then((res: AxiosResponse) => {
       return res.data._id.toString(16).toUpperCase();
     });
+}
+
+export async function cleanApplications(applications: LoriotApplication[]) {
+  console.debug(`************* CLEAN LORIOT APPLICATIONS, OUTPUTS AND DEVICES *************`);
+
+  // Count deleted resource to log
+  var deletedDevices = 0;
+  var deletedApplications = 0;
+
+  // Get all deveuis to import
+  const deveuisToImport = new Set(applications.map((app) => app.devices.map((dev) => dev.deveui.toUpperCase())).flat());
+
+  // Get LORIOT existing applications
+  const apps: any[] = await getPaginatedResponse(new URL(`https://${process.env.URL}/1/nwk/apps`), process.env.AUTH as string, 'apps');
+
+  // Iterate over LORIOT existing applications
+  for (const app of apps) {
+    try {
+      const appId = app._id.toString(16).toUpperCase();
+
+      // Get LORIOT application existing devices
+      const appDevices: any[] = await getPaginatedResponse(
+        new URL(`https://${process.env.URL}/1/nwk/app/${appId}/devices`),
+        process.env.AUTH as string,
+        'devices'
+      );
+
+      // Iterate over LORIOT existing devices
+      for (const appDevice of appDevices) {
+        const deveui = appDevice._id.toUpperCase();
+
+        // If the device to import already exists, let's delete it from LORIOT
+        if (deveuisToImport.has(deveui)) {
+          try {
+            await axios.delete(`https://${process.env.URL}/1/nwk/app/${appId}/device/${deveui}`, { headers: { Authorization: process.env.AUTH } });
+            console.debug(`[${app.name}][DEV][${deveui}] Device deleted`);
+            deletedDevices++;
+          } catch (err: any) {
+            console.error(`[${app.name}][DEV][${deveui}] Device deletion error: ${getErrorMessage(err)}`);
+          }
+        }
+      }
+
+      // Check how many devices have been left in the application
+      const updatedApp = await axios.get(`https://${process.env.URL}/1/nwk/app/${appId}`, {
+        headers: { Authorization: process.env.AUTH },
+      });
+
+      // If no devices, delete the application
+      if (updatedApp.data.devices == 0) {
+        try {
+          await axios.delete(`https://${process.env.URL}/1/nwk/app/${appId}`, {
+            headers: { Authorization: process.env.AUTH },
+          });
+          console.debug(`[${app.name}] Empty application deleted`);
+          deletedApplications++;
+        } catch (err: any) {
+          console.error(`[${app.name}] Application deletion error: ${getErrorMessage(err)}`);
+        }
+      }
+    } catch (err: any) {
+      console.error(`[${app.name}] Application clean error: ${getErrorMessage(err)}`);
+    }
+  }
+
+  console.debug(`-> ${deletedApplications} applications deleted`);
+  console.debug(`-> ${deletedDevices} devices deleted`);
+  console.debug(``);
 }
