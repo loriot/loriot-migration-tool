@@ -136,7 +136,9 @@ export enum eDeviceActivation {
 }
 
 export async function importApplications(applications: LoriotApplication[]) {
-  console.debug(`Importing applications to LORIOT ...`);
+  console.debug(
+    `************* IMPORT APPLICATIONS, OUTPUTS AND DEVICES TO LORIOT *************`
+  );
 
   /**
    * Call LORIOT API to create recourses
@@ -161,7 +163,6 @@ export async function importApplications(applications: LoriotApplication[]) {
               out.osetup.name
             }] Output creation error: ${getErrorMessage(err)}`
           );
-          console.debug(out);
         }
       }
 
@@ -177,7 +178,6 @@ export async function importApplications(applications: LoriotApplication[]) {
               dev.deveui
             }] Device creation error: ${getErrorMessage(err)}`
           );
-          console.debug(dev);
         }
       }
     } catch (err: any) {
@@ -187,8 +187,7 @@ export async function importApplications(applications: LoriotApplication[]) {
     }
   }
 
-  console.debug(`Applications migration complete!`);
-  console.debug(`*************************************`);
+  console.debug(``);
 }
 
 async function createApp(app: LoriotApplication): Promise<string> {

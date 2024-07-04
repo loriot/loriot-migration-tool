@@ -10,6 +10,7 @@ import { LoriotNetwork, importNetworks } from './loriot/networks';
   console.log(``);
 
   try {
+    // (1) LOAD RESOURCES
     var applications: LoriotApplication[] = [];
     var networks: LoriotNetwork[] = [];
     if (
@@ -17,14 +18,13 @@ import { LoriotNetwork, importNetworks } from './loriot/networks';
       process.env.CHIRPSTACK_API_TOKEN &&
       process.env.CHIRPSTACK_TENANT_ID
     ) {
-      // CHIRPSTACK
-      console.debug(`************* CHIRPSTACK *************`);
-
+      // Load ChirpStack applications, integrations and devices
       applications = await loadChirpstackApplications(
         process.env.CHIRPSTACK_URL,
         process.env.CHIRPSTACK_API_TOKEN,
         process.env.CHIRPSTACK_TENANT_ID
       );
+      // Load ChirpStack networks and gateways
       networks = [
         await loadChirpstackGateways(
           process.env.CHIRPSTACK_URL,
@@ -33,18 +33,22 @@ import { LoriotNetwork, importNetworks } from './loriot/networks';
         ),
       ];
     } else {
-      // KERLINK
-      console.debug(`************* KERLINK *************`);
-
+      // Load Kerlink clusters, push configurations and devices
       applications = await loadKerlinkClusters();
+      // Load Kerlink networks and gateways
       networks = await loadKerlinkFleets();
     }
 
-    if (applications.length > 0) {
-      await importApplications(applications);
-    }
-    if (networks.length > 0) {
-      await importNetworks(networks);
+    // (3) IMPORT RESOURCES TO LORIOT
+    if (process.env.IMPORT !== undefined ? Number(process.env.IMPORT) : true) {
+      if (applications.length > 0) {
+        // Import applications, outputs and devices
+        await importApplications(applications);
+      }
+      if (networks.length > 0) {
+        // Import networks and gateways
+        await importNetworks(networks);
+      }
     }
 
     process.exit(0);

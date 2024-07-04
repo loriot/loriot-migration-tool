@@ -14,6 +14,9 @@ export async function loadChirpstackGateways(
   apiToken: string,
   tenantId: string
 ): Promise<LoriotNetwork> {
+  console.debug(
+    `************* LOAD CHIRSPTACK NETWORKS AND GATEWAYS *************`
+  );
   console.debug(`Loading gateways ...`);
 
   // Gateways not organized in networks on Chirpstack
@@ -29,7 +32,7 @@ export async function loadChirpstackGateways(
   }
 
   console.debug(`Gateways loading complete!`);
-  console.debug(`*************************************`);
+  console.debug(``);
   return network;
 }
 

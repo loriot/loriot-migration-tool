@@ -14,6 +14,9 @@ export async function loadChirpstackApplications(
   apiToken: string,
   tenantId: string
 ): Promise<LoriotApplication[]> {
+  console.debug(
+    `************* LOAD CHIRSPTACK APPLICATIONS, INTEGRATIONS AND DEVICES *************`
+  );
   console.debug(`Loading applications ...`);
   const loriotApplications: LoriotApplication[] = [];
 
@@ -29,7 +32,7 @@ export async function loadChirpstackApplications(
   }
 
   console.debug(`Applications loading complete!`);
-  console.debug(`*************************************`);
+  console.debug(``);
   return loriotApplications;
 }
 

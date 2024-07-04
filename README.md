@@ -31,6 +31,7 @@ PoC tool to migrate resources to LORIOT NMS
 2. Edit `.env.kerlink` file
    - `URL`: LORIOT NMS URL (example: `eu1.loriot.io`)
    - `AUTH`: LORIOT API authorization header (example: `Bearer AAAAAgvm9WBrwSdUFQ7_SB1ItnTnxbJDfXE6RjbUBNdeVmfG8`)
+   - `IMPORT`: Set to `0` to disable the import. Useful to only evaluate CSV files.
 3. `docker compose -f docker-compose.kerlink.yaml build && docker compose -f docker-compose.kerlink.yaml up`
 
 ### ChirpStack
@@ -41,6 +42,7 @@ PoC tool to migrate resources to LORIOT NMS
 - `AUTH`: LORIOT API authorization header (example: `Bearer AAAAAgvm9WBrwSdUFQ7_SB1ItnTnxbJDfXE6RjbUBNdeVmfG8`)
 - `CHIRPSTACK_URL`: ChirpStack URL (example: `localhost:8080`)
 - `CHIRPSTACK_API_TOKEN`: ChirpStack API Token (example: `eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjaGlycHN0YWNrIiwiaXNzIjoiY2hpcnBzdGFjayIsInN1YiI6IjFjNjYyNzUwLTYyYzQtNDVkMi1hZDBhLTRkOWM4MGRjM2I3YyIsInR5cCI6ImtleSJ9.397sJNNvVUaIVR2r_-bgFXe3reR7NQB-N6lNTtkSYhQ`)
-- `CHIRPSTACK_TENANT_ID`: ChirpStack Tenant ID (example: `52f14cd4-c6f1-4fbd-8f87-4025e1d49242`)
+  - `CHIRPSTACK_TENANT_ID`: ChirpStack Tenant ID (example: `52f14cd4-c6f1-4fbd-8f87-4025e1d49242`)
+  - `IMPORT`: Set to `0` to disable the import. Useful to only evaluate ChirpStack resources.
 
 2. `docker compose -f docker-compose.chirpstack.yaml build && docker compose -f docker-compose.chirpstack.yaml up`

@@ -137,14 +137,16 @@ export type KerlinkDevice = {
 };
 
 export async function loadKerlinkClusters(): Promise<LoriotApplication[]> {
-  console.debug(`Loading clusters from CSV ...`);
+  console.debug(
+    `************* LOAD KERLINK CLUSTERS, PUSH CONFIGURATIONS AND DEVICES *************`
+  );
 
   /**
    * Devices
    */
   console.log(`Loading kerlink devices from ${DEVICES_PATH} ...`);
   const devices: KerlinkDevice[] = await loadCsvFile(DEVICES_PATH);
-  console.log(`Found ${devices.length} devices!`);
+  console.log(`-> Found ${devices.length} devices!`);
   // TODO: validate expected fields
 
   /**
@@ -156,7 +158,7 @@ export async function loadKerlinkClusters(): Promise<LoriotApplication[]> {
   const pushConfigurations: KerlinkPushConfiguration[] = await loadCsvFile(
     PUSHCONFIGURATIONS_PATH
   );
-  console.log(`Found ${pushConfigurations.length} push configurations!`);
+  console.log(`-> Found ${pushConfigurations.length} push configurations!`);
   // TODO: validate expected fields
 
   /**
@@ -185,7 +187,7 @@ export async function loadKerlinkClusters(): Promise<LoriotApplication[]> {
         }
       }
 
-      console.log(`Found ${data.length} clusters!`);
+      console.log(`-> Found ${data.length} clusters!`);
 
       const result: KerlinkCluster[] = [];
       for (const clusterCsv of data) {
@@ -215,23 +217,24 @@ export async function loadKerlinkClusters(): Promise<LoriotApplication[]> {
     }
   );
 
-  console.debug(`Clusters loading complete!`);
-  console.debug(`*************************************`);
-
   /**
    * Translate from Kerlink to LORIOT
    */
-  console.debug(`Translating clusters into LORIOT applications ...`);
   const applications: LoriotApplication[] = [];
-  for (const kerlinkCluster of clusters) {
-    // Prepare LORIOT device
-    const app: LoriotApplication = translateKerlinkCluster(kerlinkCluster);
-    // Add device to application list
-    applications.push(app);
+  if (clusters.length > 0) {
+    console.debug(``);
+    console.debug(
+      `************* TRANSLATING KERLINK INTO LORIOT DEVICES *************`
+    );
+    for (const kerlinkCluster of clusters) {
+      // Prepare LORIOT device
+      const app: LoriotApplication = translateKerlinkCluster(kerlinkCluster);
+      // Add device to application list
+      applications.push(app);
+    }
   }
 
-  console.debug(`Clusters translation complete!`);
-  console.debug(`*************************************`);
+  console.debug(``);
 
   return applications;
 }
@@ -255,7 +258,7 @@ function translateKerlinkCluster(
       app.outputs.push(out);
     } catch (err: any) {
       console.log(
-        `Unable to translate push configuration ${kerlinkPushConfiguration.id} "${kerlinkPushConfiguration.name}": ${err.message}`
+        `(X) Unable to translate push configuration ${kerlinkPushConfiguration.id} "${kerlinkPushConfiguration.name}": ${err.message}`
       );
     }
   }
@@ -267,7 +270,7 @@ function translateKerlinkCluster(
       app.devices.push(dev);
     } catch (err: any) {
       console.log(
-        `Unable to translate device "${kerlinkDevice.devEui}": ${err.message}`
+        `(X) Unable to translate device "${kerlinkDevice.devEui}": ${err.message}`
       );
     }
   }
@@ -400,7 +403,7 @@ function translateKerlinkDevice(kerlinkDevice: KerlinkDevice): LoriotDevice {
     };
   } catch (err: any) {
     throw new Error(
-      `Unable to parse macVersion ${kerlinkDevice.macVersion}: ${err.message}`
+      `(X) Unable to parse macVersion ${kerlinkDevice.macVersion}: ${err.message}`
     );
   }
 

@@ -22,7 +22,9 @@ export type LoriotGateway = {
 };
 
 export async function importNetworks(networks: LoriotNetwork[]) {
-  console.debug(`Importing networks to LORIOT ...`);
+  console.debug(
+    `************* IMPORT NETWORKS AND GATEWAYS TO LORIOT *************`
+  );
 
   /**
    * Call LORIOT API to create recourses
@@ -45,7 +47,6 @@ export async function importNetworks(networks: LoriotNetwork[]) {
               gw.MAC
             }] Gateway creation error: ${getErrorMessage(err)}`
           );
-          console.debug(gw);
         }
       }
     } catch (err: any) {
@@ -55,8 +56,7 @@ export async function importNetworks(networks: LoriotNetwork[]) {
     }
   }
 
-  console.debug(`Networks migration complete!`);
-  console.debug(`*************************************`);
+  console.debug(``);
 }
 
 async function createNet(name: LoriotNetwork): Promise<string> {
