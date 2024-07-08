@@ -13,6 +13,7 @@ export type KerlinkFleet = {
   id: number;
   name: string;
   gateways: KerlinkGateway[];
+  customer: { id: number; name: string };
 };
 
 export type KerlinkGateway = {
@@ -65,11 +66,23 @@ export async function loadKerlinkFleets(): Promise<LoriotNetwork[]> {
     for (const fleetCsv of data) {
       // TODO: validate expected fields
 
+      // customer field is a json, let's parse it
+      const customer = JSON.parse((fleetCsv as any).customer);
+
+      // If requested, filter by customer
+      if (Number(process.env.CUSTOMERID) ?? false) {
+        if (customer.id !== Number(process.env.CUSTOMERID)) {
+          // Fleet belonging to another customer, skip it
+          continue;
+        }
+      }
+
       // Recollect gateways already parsed
       const fleet: KerlinkFleet = {
         id: fleetCsv.id,
         name: fleetCsv.name,
         gateways: gateways.filter((gw) => gw.fleetId == fleetCsv.id),
+        customer,
       };
 
       result.push(fleet);
@@ -77,6 +90,14 @@ export async function loadKerlinkFleets(): Promise<LoriotNetwork[]> {
 
     return result;
   });
+
+  // If filtered by customer, log a resume here
+  if (Number(process.env.CUSTOMERID) ?? false) {
+    console.debug(``);
+    console.debug(`Filtered by customer (${process.env.CUSTOMERID}) ${fleets[0]?.customer.name}`);
+    console.debug(`-> ${fleets.map((c) => c.gateways).flat().length} gateways`);
+    console.debug(`-> ${fleets.length} fleets`);
+  }
 
   /**
    * Translate from Kerlink to LORIOT
@@ -93,6 +114,7 @@ export async function loadKerlinkFleets(): Promise<LoriotNetwork[]> {
     }
   }
 
+  console.debug(`Done`);
   console.debug(``);
 
   return networks;

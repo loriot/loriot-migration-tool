@@ -1,17 +1,4 @@
-import {
-  LoriotApplication,
-  LoriotDevice,
-  LoriotHttpKerlinkOutput,
-  LoriotMqttKerlinkOutput,
-  LoriotOutput,
-  LoriotWebsocketKerlinkOutput,
-  eDeviceActivation,
-  eDeviceClass,
-  eDeviceVersion,
-  eLoriotKerlinkOutputEncoding,
-  eLoriotKerlinkOutputVerbosity,
-  lorawanVersion,
-} from '../loriot/applications';
+import { LoriotApplication, LoriotDevice, LoriotHttpKerlinkOutput, LoriotMqttKerlinkOutput, LoriotOutput, LoriotWebsocketKerlinkOutput, eDeviceActivation, eDeviceClass, eDeviceVersion, eLoriotKerlinkOutputEncoding, eLoriotKerlinkOutputVerbosity, lorawanVersion } from '../loriot/applications';
 import { addLeadingZeros, loadCsvFile, randomHex } from '../utils';
 
 const DEVICES_PATH = './data/devices.csv';
@@ -38,6 +25,7 @@ export type KerlinkCluster = {
   hexa: boolean;
   pushConfigurations: KerlinkPushConfiguration[];
   devices: KerlinkDevice[];
+  customer: { id: number; name: string };
 };
 
 export enum eKerlinkPushConfigurationType {
@@ -140,7 +128,7 @@ export async function loadKerlinkClusters(): Promise<LoriotApplication[]> {
   console.debug(`************* LOAD KERLINK CLUSTERS, PUSH CONFIGURATIONS AND DEVICES *************`);
 
   /**
-   * Devices
+   * Load devices csv file
    */
   console.log(`Loading kerlink devices from ${DEVICES_PATH} ...`);
   const devices: KerlinkDevice[] = await loadCsvFile(DEVICES_PATH);
@@ -148,7 +136,7 @@ export async function loadKerlinkClusters(): Promise<LoriotApplication[]> {
   // TODO: validate expected fields
 
   /**
-   * Push Configurations
+   * Load push configurations csv file
    */
   console.log(`Loading kerlink push configurations from ${PUSHCONFIGURATIONS_PATH} ...`);
   const pushConfigurations: KerlinkPushConfiguration[] = await loadCsvFile(PUSHCONFIGURATIONS_PATH);
@@ -156,7 +144,7 @@ export async function loadKerlinkClusters(): Promise<LoriotApplication[]> {
   // TODO: validate expected fields
 
   /**
-   * Clusters
+   * Load clusters csv file
    */
   console.log(`Loading kerlink push configurations from ${PUSHCONFIGURATIONS_PATH} ...`);
   const clusters: KerlinkCluster[] = await loadCsvFile(CLUSTERS_PATH).then((data: KerlinkClusterCsv[]) => {
@@ -178,10 +166,23 @@ export async function loadKerlinkClusters(): Promise<LoriotApplication[]> {
 
     console.log(`-> Found ${data.length} clusters!`);
 
+    // Link devices and push configurations to clusters
     const result: KerlinkCluster[] = [];
     for (const clusterCsv of data) {
       // TODO: validate expected fields
 
+      // customer field is a json, let's parse it
+      const customer = JSON.parse((clusterCsv as any).customer);
+
+      // If requested, filter by customer
+      if (Number(process.env.CUSTOMERID) ?? false) {
+        if (customer.id !== Number(process.env.CUSTOMERID)) {
+          // Cluster belonging to another customer, skip it
+          continue;
+        }
+      }
+
+      // pushConfiguration field is a json, let's parse it
       if (clusterCsv.pushConfiguration) {
         clusterCsv.pushConfiguration = JSON.parse((clusterCsv as any).pushConfiguration);
       }
@@ -193,6 +194,7 @@ export async function loadKerlinkClusters(): Promise<LoriotApplication[]> {
         hexa: clusterCsv.hexa,
         devices: devices.filter((dev) => dev.clusterId == clusterCsv.id),
         pushConfigurations: pushConfigurations.filter((pc) => pc.id == clusterCsv.pushConfiguration?.id),
+        customer,
       };
 
       result.push(cluster);
@@ -200,6 +202,15 @@ export async function loadKerlinkClusters(): Promise<LoriotApplication[]> {
 
     return result;
   });
+
+  // If filtered by customer, log a resume here
+  if (Number(process.env.CUSTOMERID) ?? false) {
+    console.debug(``);
+    console.debug(`Filtered by customer (${process.env.CUSTOMERID}) ${clusters[0]?.customer.name}`);
+    console.debug(`-> ${clusters.map((c) => c.devices).flat().length} devices`);
+    console.debug(`-> ${clusters.map((c) => c.pushConfigurations).flat().length} push configurations`);
+    console.debug(`-> ${clusters.length} clusters`);
+  }
 
   /**
    * Translate from Kerlink to LORIOT
@@ -216,6 +227,7 @@ export async function loadKerlinkClusters(): Promise<LoriotApplication[]> {
     }
   }
 
+  console.debug(`Done`);
   console.debug(``);
 
   return applications;

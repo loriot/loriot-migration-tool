@@ -33,6 +33,7 @@ PoC tool to migrate resources to LORIOT NMS
   - `AUTH`: LORIOT API authorization header (example: `Bearer AAAAAgvm9WBrwSdUFQ7_SB1ItnTnxbJDfXE6RjbUBNdeVmfG8`)
   - `CLEAN`: Set to `1` to delete existing resources on LORIOT if to import. Useful for cleaning previous import intents.
   - `IMPORT`: Set to `0` to disable the import. Useful for evaluating only the CSV files.
+  - `CUSTOMERID`: Set Kerlink Customer ID to filter specific customer resources. Useful to migrate resources by customer without editing the csv files.
 3. `docker compose -f docker-compose.kerlink.yaml build && docker compose -f docker-compose.kerlink.yaml up`
 
 ### ChirpStack

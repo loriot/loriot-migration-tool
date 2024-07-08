@@ -50,6 +50,9 @@ import { LoriotNetwork, cleanNetworks, importNetworks } from './loriot/networks'
       }
     }
 
+    console.log('');
+    console.log('End');
+
     process.exit(0);
   } catch (err) {
     console.error(err);
