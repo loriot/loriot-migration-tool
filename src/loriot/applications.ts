@@ -184,7 +184,7 @@ async function createApp(app: LoriotApplication): Promise<string> {
       {
         title: app.name,
         capacity: app.devices.length > 0 ? app.devices.length : 1,
-        visibility: 'private',
+        visibility: 'public',
         mcastdevlimit: 0,
       },
       {
@@ -231,11 +231,7 @@ export async function cleanApplications(applications: LoriotApplication[]) {
       const appId = app._id.toString(16).toUpperCase();
 
       // Get LORIOT application existing devices
-      const appDevices: any[] = await getPaginatedResponse(
-        new URL(`https://${process.env.URL}/1/nwk/app/${appId}/devices`),
-        process.env.AUTH as string,
-        'devices'
-      );
+      const appDevices: any[] = await getPaginatedResponse(new URL(`https://${process.env.URL}/1/nwk/app/${appId}/devices`), process.env.AUTH as string, 'devices');
 
       // Iterate over LORIOT existing devices
       for (const appDevice of appDevices) {

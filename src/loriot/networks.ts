@@ -58,7 +58,7 @@ async function createNet(name: LoriotNetwork): Promise<string> {
       `https://${process.env.URL}/1/nwk/networks`,
       {
         name: name.name,
-        visibility: 'private',
+        visibility: 'public',
       },
       {
         headers: { Authorization: process.env.AUTH },
@@ -113,11 +113,7 @@ export async function cleanNetworks(networks: LoriotNetwork[]) {
       const netId = net._id.toString(16).toUpperCase();
 
       // Get LORIOT network existing devices
-      const netGateways: any[] = await getPaginatedResponse(
-        new URL(`https://${process.env.URL}/1/nwk/network/${netId}/gateways`),
-        process.env.AUTH as string,
-        'gateways'
-      );
+      const netGateways: any[] = await getPaginatedResponse(new URL(`https://${process.env.URL}/1/nwk/network/${netId}/gateways`), process.env.AUTH as string, 'gateways');
 
       // Iterate over LORIOT existing gateways
       for (const netGateway of netGateways) {
