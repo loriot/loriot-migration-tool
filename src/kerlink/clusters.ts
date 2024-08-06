@@ -10,6 +10,7 @@ type KerlinkClusterCsv = {
   name: string;
   hexa: boolean;
   pushEnabled: boolean;
+  customer?: string;
   pushConfiguration?: {
     id: number;
     links: {
@@ -159,6 +160,7 @@ export async function loadKerlinkClusters(): Promise<LoriotApplication[]> {
             name: device.clusterName ?? `Cluster ${device.clusterId}`,
             hexa: true,
             pushEnabled: false,
+            customer: `{ "name": "${device.customerName}", "id": ${device.customerId} }`,
           });
         }
       }
@@ -173,7 +175,6 @@ export async function loadKerlinkClusters(): Promise<LoriotApplication[]> {
 
       // customer field is a json, let's parse it
       const customer = JSON.parse((clusterCsv as any).customer);
-
       // If requested, filter by customer
       if (Number(process.env.CUSTOMERID) ?? false) {
         if (customer.id !== Number(process.env.CUSTOMERID)) {
