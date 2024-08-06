@@ -7,6 +7,7 @@ const GATEWAYS_PATH = './data/gateways.csv';
 export type KerlinkFleetCsv = {
   id: number;
   name: string;
+  customer: string;
 };
 
 export type KerlinkFleet = {
@@ -54,6 +55,7 @@ export async function loadKerlinkFleets(): Promise<LoriotNetwork[]> {
           data.push({
             id: gateway.fleetId,
             name: gateway.fleetName ?? `Fleet ${gateway.fleetId}`,
+            customer: `{ "name": "Unknown customer", "id": 0 }`,
           });
         }
       }
