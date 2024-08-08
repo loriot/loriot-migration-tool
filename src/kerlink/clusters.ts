@@ -51,7 +51,7 @@ export type KerlinkPushConfiguration = {
   url?: string;
   user?: string;
   password?: string; // always null
-  headers: { key: string; value: string }[];
+  headers: string; // [ { ""key"": ""myHeader"", ""value"": ""myValue"" } ]
   tlsCertFileName?: string; // useless
   tlsKeyFileName?: string; // useless
   tlsCaFileName?: string; // useless
@@ -160,7 +160,7 @@ export async function loadKerlinkClusters(): Promise<LoriotApplication[]> {
             name: device.clusterName ?? `Cluster ${device.clusterId}`,
             hexa: true,
             pushEnabled: false,
-            customer: `{ "name": "${device.customerName}", "id": ${device.customerId} }`,
+            customer: `{ "name": "Unknown customer", "id": 0 }`,
           });
         }
       }
@@ -271,6 +271,15 @@ function translateKerlinkPushConfigurations(kerlinkPushConfiguration: KerlinkPus
         throw new Error(`Missing 'url'`);
       }
 
+      // Translate custom headers
+      var custom_headers: any;
+      if (kerlinkPushConfiguration.headers) {
+        custom_headers = {};
+        for (const header of JSON.parse(kerlinkPushConfiguration.headers)) {
+          custom_headers[header.key] = header.value;
+        }
+      }
+
       const http: LoriotHttpKerlinkOutput = {
         output: 'kerlink_http',
         osetup: {
@@ -282,7 +291,7 @@ function translateKerlinkPushConfigurations(kerlinkPushConfiguration: KerlinkPus
           password: kerlinkPushConfiguration.password,
           dataup_route: kerlinkPushConfiguration.httpDataUpRoute,
           datadownevent_route: kerlinkPushConfiguration.httpDataDownEventRoute,
-          custom_headers: kerlinkPushConfiguration.headers,
+          custom_headers: custom_headers ? JSON.stringify(custom_headers) : undefined,
         },
       };
 
@@ -290,6 +299,15 @@ function translateKerlinkPushConfigurations(kerlinkPushConfiguration: KerlinkPus
     case eKerlinkPushConfigurationType.WEBSOCKET:
       if (!kerlinkPushConfiguration.url) {
         throw new Error(`Missing 'url'`);
+      }
+
+      // Translate custom headers
+      var custom_headers: any;
+      if (kerlinkPushConfiguration.headers) {
+        custom_headers = {};
+        for (const header of JSON.parse(kerlinkPushConfiguration.headers)) {
+          custom_headers[header.key] = header.value;
+        }
       }
 
       const ws: LoriotWebsocketKerlinkOutput = {
@@ -301,7 +319,7 @@ function translateKerlinkPushConfigurations(kerlinkPushConfiguration: KerlinkPus
           url: kerlinkPushConfiguration.url,
           user: kerlinkPushConfiguration.user,
           password: kerlinkPushConfiguration.password,
-          custom_headers: kerlinkPushConfiguration.headers,
+          custom_headers: custom_headers ? JSON.stringify(custom_headers) : undefined,
         },
       };
 

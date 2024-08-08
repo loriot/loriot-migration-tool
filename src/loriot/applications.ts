@@ -52,7 +52,7 @@ export interface LoriotHttpKerlinkOutput extends LoriotOutput {
     cert?: string; // Not exported by WMC
     key?: string; // Not exported by WMC
     ca?: string; // Not exported by WMC
-    custom_headers?: { key: string; value: string }[];
+    custom_headers?: string; // { "my-header-1": "my value 1", "my-header-2": "my value 2", "my-header-3": "my value 3" }
   };
 }
 
@@ -68,7 +68,7 @@ export interface LoriotWebsocketKerlinkOutput extends LoriotOutput {
     cert?: string; // Not exported by WMC
     key?: string; // Not exported by WMC
     ca?: string; // Not exported by WMC
-    custom_headers?: { key: string; value: string }[];
+    custom_headers?: string; // { "my-header-1": "my value 1", "my-header-2": "my value 2", "my-header-3": "my value 3" }
   };
 }
 
