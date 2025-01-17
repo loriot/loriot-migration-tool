@@ -13,7 +13,7 @@ export type LoriotGateway = {
   /* custom EUI to be used only with basics station or packet forwarder */
   customEUI?: string;
   MAC: string;
-  region: string;
+  region?: string;
   location: {};
   base: string;
   bus: string;
@@ -83,13 +83,14 @@ async function createGateway(netId: string, gw: LoriotGateway): Promise<string> 
         card: gw.card,
         concentrator: gw.concentrator,
         model: gw.model,
+        region: gw.region
       },
       {
         headers: { Authorization: process.env.AUTH },
       }
     )
     .then((res: AxiosResponse) => {
-      // TODO: call PUT to set region and channel plan
+      // TODO: call PUT to set channel plan
       return res.data._id.toString(16).toUpperCase();
     });
 }

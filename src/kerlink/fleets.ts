@@ -4,6 +4,19 @@ import { loadCsvFile } from '../utils';
 const FLEETS_PATH = './data/fleets.csv';
 const GATEWAYS_PATH = './data/gateways.csv';
 
+const regionKerlinkToLoriot: Record<string,string> = {
+  AS923: 'AS923',
+  AU915: 'AU915-928',
+  CN470: 'CN470-510',
+  EU433: 'EU433',
+  CN779: 'CN779-787',
+  IN865: 'IN865-867',
+  EU868: 'EU863-870',
+  KR920: 'KR920-923',
+  RU864: 'RU864-870',
+  US915: 'US902-928'
+}
+
 export type KerlinkFleetCsv = {
   id: number;
   name: string;
@@ -145,13 +158,16 @@ function translateKerlinkGateway(kerlinkGateway: KerlinkGateway): LoriotGateway 
   const gw: LoriotGateway = {
     title: kerlinkGateway.name,
     MAC: kerlinkGateway.eth0MAC,
-    region: kerlinkGateway.region,
     location: {
       lat: kerlinkGateway.latitude ?? 46.8076885,
       lon: kerlinkGateway.longitude ?? 7.100528,
     },
     ...translateGatewayModel(kerlinkGateway),
   };
+
+  if (kerlinkGateway.region) {
+    gw.region = convertKerlinkRegionToLoriot(kerlinkGateway.region);
+  }
 
   return gw;
 }
@@ -201,4 +217,8 @@ function translateGatewayModel(kerlinkGateway: KerlinkGateway): {
   }
 
   throw new Error(`Unknown model ${kerlinkGateway.brandName} ${kerlinkGateway.description}`);
+}
+
+function convertKerlinkRegionToLoriot(region: string): string {
+  return regionKerlinkToLoriot[region];
 }
