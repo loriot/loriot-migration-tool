@@ -147,7 +147,7 @@ export async function loadKerlinkClusters(): Promise<LoriotApplication[]> {
   /**
    * Load clusters csv file
    */
-  console.log(`Loading kerlink push configurations from ${PUSHCONFIGURATIONS_PATH} ...`);
+  console.log(`Loading kerlink clusters from ${CLUSTERS_PATH} ...`);
   const clusters: KerlinkCluster[] = await loadCsvFile(CLUSTERS_PATH).then((data: KerlinkClusterCsv[]) => {
     if (data.length == 0) {
       // No clusters.csv file, let's get clusters from devices
