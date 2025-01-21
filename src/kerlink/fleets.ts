@@ -4,7 +4,7 @@ import { loadCsvFile } from '../utils';
 const FLEETS_PATH = './data/fleets.csv';
 const GATEWAYS_PATH = './data/gateways.csv';
 
-const regionKerlinkToLoriot: Record<string,string> = {
+const regionKerlinkToLoriot: Record<string, string> = {
   AS923: 'AS923',
   AU915: 'AU915-928',
   CN470: 'CN470-510',
@@ -14,8 +14,8 @@ const regionKerlinkToLoriot: Record<string,string> = {
   EU868: 'EU863-870',
   KR920: 'KR920-923',
   RU864: 'RU864-870',
-  US915: 'US902-928'
-}
+  US915: 'US902-928',
+};
 
 export type KerlinkFleetCsv = {
   id: number;
@@ -59,18 +59,16 @@ export async function loadKerlinkFleets(): Promise<LoriotNetwork[]> {
    */
   console.log(`Loading kerlink fleets from ${FLEETS_PATH} ...`);
   const fleets: KerlinkFleet[] = await loadCsvFile(FLEETS_PATH).then((data: KerlinkFleetCsv[]) => {
-    if (data.length == 0) {
-      // No fleets.csv file, let's get fleets from gateways
-      for (const gateway of gateways) {
-        const fleet = data.find((fleet) => fleet.id == gateway.fleetId);
-        if (!fleet) {
-          // First time for this cluster, save it
-          data.push({
-            id: gateway.fleetId,
-            name: gateway.fleetName ?? `Fleet ${gateway.fleetId}`,
-            customer: `{ "name": "Unknown customer", "id": 0 }`,
-          });
-        }
+    // Check if there are gateways with fleets not defined in fleets.csv
+    for (const gateway of gateways) {
+      const fleet = data.find((fleet) => fleet.id == gateway.fleetId);
+      if (!fleet) {
+        // Fleet not found, let's create it
+        data.push({
+          id: gateway.fleetId,
+          name: gateway.fleetName ?? `Fleet ${gateway.fleetId}`,
+          customer: `{ "name": "Unknown customer", "id": 0 }`,
+        });
       }
     }
 
@@ -180,7 +178,11 @@ function translateGatewayModel(kerlinkGateway: KerlinkGateway): {
   model: string;
 } {
   if (kerlinkGateway.brandName == 'KERLINK') {
-    // Kerlink iFemtocell (OS V4.x.x incl Evolution)
+    // WMC:
+    // - Wirnet iFemtoCell
+    // - Wirnet iFemtoCell evolution
+    // LORIOT:
+    // - Kerlink iFemtocell & iFemtocell Evolution
     if (/iFemtoCell/.test(kerlinkGateway.description)) {
       return {
         base: 'kerlink',
@@ -191,7 +193,10 @@ function translateGatewayModel(kerlinkGateway: KerlinkGateway): {
       };
     }
 
-    // Kerlink iStation
+    // WMC
+    // - Wirnet iStation
+    // LORIOT:
+    // - Kerlink iStation
     if (/iStation/.test(kerlinkGateway.description)) {
       return {
         base: 'kerlink',
@@ -202,18 +207,21 @@ function translateGatewayModel(kerlinkGateway: KerlinkGateway): {
       };
     }
 
-    // Kerlink iBTS
+    // WMC:
+    // - Wirnet iBts
+    // - Wirnet iBts 1 LOC
+    // - wirnet.iBts TYPE_LORA_LOC
+    // LORIOT:
+    // - Kerlink iBTS Compact FPGA v61
     if (/iBts/.test(kerlinkGateway.description)) {
       return {
         base: 'kerlink',
         bus: 'SPI',
         card: '',
         concentrator: 'kerlink_ibts_v2_61',
-        model: 'ibts',
+        model: 'ibts_compact',
       };
     }
-
-    // TODO: support more models
   }
 
   throw new Error(`Unknown model ${kerlinkGateway.brandName} ${kerlinkGateway.description}`);

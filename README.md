@@ -35,6 +35,16 @@ PoC tool to migrate resources to LORIOT NMS
 - From WMC it's not possible to export OTAA device session keys (devaddr, appskey and nwkskey). That's why it's required to manually extend `devices.csv` to avoid rejoin procedures (Kerlink support should be able to provide them). However, it's strongly recommended to perform a new join procedure changing Network Server.
 - Gateway eth0 MAC address is used by LORIOT as gateway unique identifier but it's not exportable from WMC. So `eth0MAC` coulmn is required in `gateways.csv` if not using Kerlink ZTP.
 - WMC Push Configuration sensible data (user, password, tlsCertFileName, tlsKeyFileName, mqttPassword, ...) are not exportable from WMC. If needed, please manually fill them in `pushConfigurations.csv`.
+- According to the exported `description` field in `gateways.csv`, the gateways are mapped as follows:
+
+| WMC  | LORIOT |
+| ------------- | ------------- |
+| Wirnet iStation  | Kerlink iStation |
+| Wirnet iFemtoCell  | Kerlink iFemtocell & iFemtocell Evolution  |
+| Wirnet iFemtoCell evolution  | Kerlink iFemtocell & iFemtocell Evolution  |
+| Wirnet iBts  | Kerlink iBTS Compact FPGA v61  |
+| Wirnet iBts 1 LOC  | Kerlink iBTS Compact FPGA v61 |
+| wirnet.iBts TYPE_LORA_LOC  | Kerlink iBTS Compact FPGA v61  |
 
 ### ChirpStack
 1.  Edit `.env.chirpstack` file

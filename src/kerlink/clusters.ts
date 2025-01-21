@@ -149,20 +149,18 @@ export async function loadKerlinkClusters(): Promise<LoriotApplication[]> {
    */
   console.log(`Loading kerlink clusters from ${CLUSTERS_PATH} ...`);
   const clusters: KerlinkCluster[] = await loadCsvFile(CLUSTERS_PATH).then((data: KerlinkClusterCsv[]) => {
-    if (data.length == 0) {
-      // No clusters.csv file, let's get clusters from devices
-      for (const device of devices) {
-        const cluster = data.find((cluster) => cluster.id == device.clusterId);
-        if (!cluster) {
-          // First time for this cluster, save it
-          data.push({
-            id: device.clusterId,
-            name: device.clusterName ?? `Cluster ${device.clusterId}`,
-            hexa: true,
-            pushEnabled: false,
-            customer: `{ "name": "Unknown customer", "id": 0 }`,
-          });
-        }
+    // Check if there are devices with cluster not defined in clusters.csv
+    for (const device of devices) {
+      const cluster = data.find((cluster) => cluster.id == device.clusterId);
+      if (!cluster) {
+        // Cluster not found, let's create it
+        data.push({
+          id: device.clusterId,
+          name: device.clusterName ?? `Cluster ${device.clusterId}`,
+          hexa: true,
+          pushEnabled: false,
+          customer: `{ "name": "Unknown customer", "id": 0 }`,
+        });
       }
     }
 
