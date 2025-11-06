@@ -248,20 +248,23 @@ async function translate(
   const dev: LoriotDevice = {
     title: chirpstackDevice.name ? chirpstackDevice.name.toString() : chirpstackDevice.devEui?.toUpperCase(),
     deveui: chirpstackDevice.devEui?.toUpperCase(),
+    description: chirpstackDevice.description ? String(chirpstackDevice.description) : '',
+    L2Version: lorawan,
     devclass: deviceProfile.supportsClassC ? eDeviceClass.C : eDeviceClass.A,
-    devVersion: lorawan.minor == 0 ? eDeviceVersion.v10 : eDeviceVersion.v11,
     devActivation: deviceProfile.supportsOtaa ? eDeviceActivation.OTAA : eDeviceActivation.ABP,
     devaddr: activation?.devAddr?.toUpperCase(),
-    appeui: chirpstackDevice.joinEui?.toUpperCase(),
+    joineui: chirpstackDevice.joinEui?.toUpperCase(),
     appkey: keys?.nwkKey, // Network root key (128 bit). Note: For LoRaWAN 1.0.x, use this field for the LoRaWAN 1.0.x 'AppKey`!
     nwkskey: activation?.nwkSEncKey?.toUpperCase(),
     appskey: activation?.appSKey?.toUpperCase(),
     canSendADR: true,
     rxw: 1, // Not configurable on ChirpStack
-    rx1Delay: 1,
-    seqno: 0, // TODO
-    seqdn: 0, // TODO
+    rx1Delay: deviceProfile?.rx1Delay == 0 ? 1 : Number(deviceProfile.rx1Delay),
+    seqno: activation?.fCntUp ?? 0,
+    seqdn: activation?.nFCntDown ?? 0,
     seqq: 0,
+    flushDnQueueOnJoin: deviceProfile?.flushQueueOnActivate ?? false,
+    seqrelax: chirpstackDevice.skipFcntCheck ?? false
   };
 
   return dev;

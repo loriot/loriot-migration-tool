@@ -104,19 +104,23 @@ export type LoriotDevice = {
   description?: string;
   deveui: string;
   devclass: eDeviceClass;
-  devVersion: eDeviceVersion;
+  L2Version?: lorawanVersion;
+  devVersion?: eDeviceVersion;
   devActivation: eDeviceActivation;
   appkey?: string;
   appeui?: string;
+  joineui?: string;
   devaddr?: string;
   nwkskey?: string;
   appskey?: string;
   canSendADR: boolean;
   rxw: number;
-  rx1Delay: number;
+  rx1Delay?: number;
+  flushDnQueueOnJoin?: boolean;
   seqno: number;
   seqdn: number;
   seqq: number;
+  seqrelax?: boolean;
 };
 
 export type lorawanVersion = { major: number; minor: number; patch: number };
