@@ -13,16 +13,22 @@ import { LoriotNetwork, cleanNetworks, importNetworks } from './loriot/networks'
     // (1) LOAD RESOURCES
     var applications: LoriotApplication[] = [];
     var networks: LoriotNetwork[] = [];
+    const migrateGateways = process.env.MIGRATE_GATEWAYS !== undefined ? process.env.MIGRATE_GATEWAYS === 'true' : true;
+    
     if (process.env.CHIRPSTACK_URL && process.env.CHIRPSTACK_API_TOKEN && process.env.CHIRPSTACK_TENANT_ID) {
       // Load ChirpStack applications, integrations and devices
       applications = await loadChirpstackApplications(process.env.CHIRPSTACK_URL, process.env.CHIRPSTACK_API_TOKEN, process.env.CHIRPSTACK_TENANT_ID);
       // Load ChirpStack networks and gateways
-      networks = [await loadChirpstackGateways(process.env.CHIRPSTACK_URL, process.env.CHIRPSTACK_API_TOKEN, process.env.CHIRPSTACK_TENANT_ID)];
+      if (migrateGateways) {
+        networks = [await loadChirpstackGateways(process.env.CHIRPSTACK_URL, process.env.CHIRPSTACK_API_TOKEN, process.env.CHIRPSTACK_TENANT_ID)];
+      }
     } else {
       // Load Kerlink clusters, push configurations and devices
       applications = await loadKerlinkClusters();
       // Load Kerlink networks and gateways
-      networks = await loadKerlinkFleets();
+      if (migrateGateways) {
+        networks = await loadKerlinkFleets();
+      }
     }
 
     // (2) CLEAN RESOURCES ON LORIOT

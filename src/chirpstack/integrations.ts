@@ -27,9 +27,15 @@ async function getHttpIntegration(channel: ApplicationServiceClient, apiToken: s
     const req: GetHttpIntegrationRequest = new GetHttpIntegrationRequest();
     req.setApplicationId(appId);
 
-    channel.getHttpIntegration(req, metadata, (err, resp?: GetHttpIntegrationResponse) => {
+    channel.getHttpIntegration(req, metadata, (err:any, resp?: GetHttpIntegrationResponse) => {
       if (err) {
-        reject(err);
+        // If integration doesn't exist (NOT_FOUND error), just resolve as undefined
+        if (err.code === 5) { // 5 = NOT_FOUND
+          console.log(`HTTP integration not found for application ${appId}, skipping...`);
+          resolve(undefined);
+        } else {
+          reject(err);
+        }
       } else if (!resp) {
         reject(new Error(`grpc response undefined`));
       } else {
