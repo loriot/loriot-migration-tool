@@ -76,7 +76,7 @@ async function translate(chirspstackGateway: GatewayListItem.AsObject): Promise<
     notes: chirspstackGateway.description,
     customEUI: chirspstackGateway.gatewayId,
     MAC: await randomMAC(), // TODO: how to retrieve original MAC?
-    region: 'EU868', // TODO: ask for it
+    // TODO: region and channel plan?
     location: {
       lat: chirspstackGateway.location?.latitude ?? 46.8076885,
       lon: chirspstackGateway.location?.longitude ?? 7.100528,
